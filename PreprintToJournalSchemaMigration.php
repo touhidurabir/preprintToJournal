@@ -16,8 +16,7 @@ class PreprintToJournalSchemaMigration extends Migration
      */
     public function up(): void
     {
-        if (Application::get()->getName() === 'ojs') {
-
+        if ( $this->isOJS() ) {
             Schema::create('preprint_to_journal_api_keys', function (Blueprint $table) {
                 $table->unsignedBigInteger('id')->autoIncrement();
                 $table->bigInteger('user_id');
@@ -81,12 +80,22 @@ class PreprintToJournalSchemaMigration extends Migration
      */
     public function down(): void
     {
-        if (Application::get()->getName() === 'ojs') {
+        if ($this->isOJS()) {
             Schema::drop('preprint_to_journal_api_keys');
             return;
         }
 
         Schema::drop('ldn_notification_mailbox');
         Schema::drop('preprint_to_journal');
+    }
+
+    /**
+     * Determine if running application is OJS or not
+     * 
+     * @return bool
+     */
+    protected function isOJS(): bool
+    {
+        return in_array(strtolower(Application::get()->getName()), ['ojs2', 'ojs']);
     }
 }
