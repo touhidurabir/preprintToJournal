@@ -5,9 +5,10 @@ declare(strict_types=1);
 namespace APP\plugins\generic\preprintToJournal;
 
 use APP\core\Application;
-use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\Migrations\Migration;
+use APP\plugins\generic\preprintToJournal\PreprintToJournalPlugin;
 
 class PreprintToJournalSchemaMigration extends Migration
 {
@@ -16,11 +17,11 @@ class PreprintToJournalSchemaMigration extends Migration
      */
     public function up(): void
     {
-        if ( $this->isOJS() ) {
+        if ( PreprintToJournalPlugin::isOJS() ) {
             Schema::create('preprint_to_journal_api_keys', function (Blueprint $table) {
                 $table->unsignedBigInteger('id')->autoIncrement();
                 $table->bigInteger('user_id');
-                $table->string('api_key');
+                $table->string('api_key')->unique();
                 $table->timestamps();
                 $table->softDeletes();
 
@@ -80,22 +81,12 @@ class PreprintToJournalSchemaMigration extends Migration
      */
     public function down(): void
     {
-        if ($this->isOJS()) {
+        if (PreprintToJournalPlugin::isOJS()) {
             Schema::drop('preprint_to_journal_api_keys');
             return;
         }
 
         Schema::drop('ldn_notification_mailbox');
         Schema::drop('preprint_to_journal');
-    }
-
-    /**
-     * Determine if running application is OJS or not
-     * 
-     * @return bool
-     */
-    protected function isOJS(): bool
-    {
-        return in_array(strtolower(Application::get()->getName()), ['ojs2', 'ojs']);
     }
 }

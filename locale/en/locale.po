@@ -16,3 +16,9 @@ msgstr "Preprint to Journal Articale submission plugin"
 
 msgid "plugins.generic.preprintToJournal.description"
 msgstr "This plugin provides the a standeard approach to turn a preprint to journal acticle implementing COAR Notification and LDN protocol."
+
+msgid "plugins.generic.preprintToJournal.user.profile.apiKey"
+msgstr "Preprint to Journal Api Key"
+
+msgid "plugins.generic.preprintToJournal.user.profile.apiKey.form.title"
+msgstr "Preprint to Journal Auth Api Key"
