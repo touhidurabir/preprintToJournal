@@ -7,6 +7,7 @@ namespace APP\plugins\generic\preprintToJournal;
 use PKP\plugins\Hook;
 use APP\core\Application;
 use APP\core\Request;
+use APP\plugins\generic\preprintToJournal\classes\components\JournalPublicationForm;
 use PKP\plugins\GenericPlugin;
 use APP\plugins\generic\preprintToJournal\PreprintToJournalApiHandler;
 use APP\plugins\generic\preprintToJournal\PreprintToJournalSchemaMigration;
@@ -41,23 +42,79 @@ class PreprintToJournalPlugin extends GenericPlugin
     public function register($category, $path, $mainContextId = null)
     {
         $success = parent::register($category, $path, $mainContextId);
-        
-        if ($success && $this->getEnabled()) {
-            if (self::isOJS()) {
-                Hook::add('LoadHandler', [$this, 'setApiRequestHandler']);
-                $this->setApiRequestHandler();
-                $this->callbackShowApiKeyTab();
-                $this->setupCustomApiProfileComponentHandler();
-                // $this->setUpUser();
-            }
+
+        if (!$success || !$this->getEnabled()) {
+            return $success;
         }
 
+        if (self::isOJS()) {
+            Hook::add('LoadHandler', [$this, 'setApiRequestHandler']);
+            $this->setApiRequestHandler();
+            $this->callbackShowApiKeyTab();
+            $this->setupCustomApiProfileComponentHandler();
+            // $this->setUpUser();
+
+            return $success;
+        }
+
+        $this->setupJournalPublicationTab();
+
         return $success;
+    }
+
+    public function setupJournalPublicationTab(Request $request = null): void
+    {
+        $request ??= Application::get()->getRequest();
+
+        Hook::add('Template::Workflow::Publication', function (string $hookName, array $args) use ($request): bool {
+            $templateMgr = & $args[1]; /** @var \APP\template\TemplateManager $templateMgr */
+            $output = & $args[2];
+            
+            $submission = $templateMgr->getTemplateVars('submission');
+            $context = $request->getContext();
+            $locales = $context->getSupportedSubmissionLocaleNames();
+            $locales = array_map(
+                fn (string $locale, string $name) => ['key' => $locale, 'label' => $name], 
+                array_keys($locales), 
+                $locales
+            );
+
+            $journalPublicationForm = new JournalPublicationForm(
+                action: '#', 
+                publication: $submission->getLatestPublication(), 
+                context: $context,
+                locales: $locales
+            );
+
+            import('plugins.generic.preprintToJournal.classes.components.JournalPublicationForm'); // Constant import
+
+            $templateMgr->setConstants([
+                'FORM_JOURNAL_PUBLICATION' => FORM_JOURNAL_PUBLICATION,
+            ]);
+
+            $components = $templateMgr->getState('components');
+            $components[FORM_JOURNAL_PUBLICATION] = $journalPublicationForm->getConfig();
+
+            $publicationFormIds = $templateMgr->getState('publicationFormIds');
+            $publicationFormIds[] = FORM_JOURNAL_PUBLICATION;
+
+            $templateMgr->setState([
+                'components' => $components,
+                'publicationFormIds' => $publicationFormIds,
+            ]);
+            
+            $output .= $templateMgr->fetch($this->getTemplateResource('journalPublicationTab.tpl'));
+            
+            // Permit other plugins to continue interacting with this hook
+            return false;
+        });
+
     }
 
     public function setUpUser(Request $request = null): void
     {
         $request ??= Application::get()->getRequest();
+
         Hook::add('Request::getUser', function(string $hookName, array $args) use ($request): bool {
             return false;
         });
