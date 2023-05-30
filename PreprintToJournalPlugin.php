@@ -6,8 +6,9 @@ namespace APP\plugins\generic\preprintToJournal;
 
 use PKP\plugins\Hook;
 use APP\core\Application;
+use APP\core\Request;
 use PKP\plugins\GenericPlugin;
-use APP\plugins\generic\preprintToJournal\PreprintToJournalApiKeyHandler;
+use APP\plugins\generic\preprintToJournal\PreprintToJournalApiHandler;
 use APP\plugins\generic\preprintToJournal\PreprintToJournalSchemaMigration;
 use APP\plugins\generic\preprintToJournal\controllers\tab\user\CustomApiProfileTabHandler;
 
@@ -43,13 +44,23 @@ class PreprintToJournalPlugin extends GenericPlugin
         
         if ($success && $this->getEnabled()) {
             if (self::isOJS()) {
+                Hook::add('LoadHandler', [$this, 'setApiRequestHandler']);
+                $this->setApiRequestHandler();
                 $this->callbackShowApiKeyTab();
                 $this->setupCustomApiProfileComponentHandler();
-                // Hook::add('LoadHandler', [$this, 'setApiKeyPageHandler']);
+                // $this->setUpUser();
             }
         }
 
         return $success;
+    }
+
+    public function setUpUser(Request $request = null): void
+    {
+        $request ??= Application::get()->getRequest();
+        Hook::add('Request::getUser', function(string $hookName, array $args) use ($request): bool {
+            return false;
+        });
     }
 
     public function callbackShowApiKeyTab(): void
@@ -57,6 +68,7 @@ class PreprintToJournalPlugin extends GenericPlugin
         Hook::add('Template::User::profile', function (string $hookName, array $args): bool {
             [, $templateMgr, &$output] = $args;
             $output .= $templateMgr->fetch($this->getTemplateResource('apiKeyTab.tpl'));
+            
             // Permit other plugins to continue interacting with this hook
             return false;
         });
@@ -76,17 +88,19 @@ class PreprintToJournalPlugin extends GenericPlugin
         });
     }
 
-    public function setApiKeyPageHandler(string $hookName, array $args): bool
+    public function setApiRequestHandler(): void
     {
-        $page =& $args[0];
-        $handler =& $args[3];
+        Hook::add('LoadHandler', function (string $hookName, array $args): bool {
+            $page =& $args[0];
+            $handler =& $args[3];
 
-        if ($this->getEnabled() && strtolower($page) === strtolower(PreprintToJournalApiKeyHandler::URL_PAGE_HANDLER)) {
-            $handler = new PreprintToJournalApiKeyHandler($this);
-            return true;
-        }
-
-        return false;
+            if ($this->getEnabled() && strtolower($page) === strtolower(PreprintToJournalApiHandler::URL_PAGE_HANDLER)) {
+                $handler = new PreprintToJournalApiHandler($this);
+                return true;
+            }
+    
+            return false;
+        });
     }
 
     /**

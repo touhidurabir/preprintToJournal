@@ -31,9 +31,14 @@ class ApiKey extends Model
      */
     protected $guarded = [];
 
-    public function getApiKey(): ?string
+    public function getApiKey(): string
     {
         return $this->api_key;
+    }
+
+    public function getUserId(): int
+    {
+        return $this->user_id;
     }
 
     /**
@@ -55,9 +60,9 @@ class ApiKey extends Model
      *
      * @param string $key
      *
-     * @return bool
+     * @return self|null
      */
-    public static function getByKey(string $key): bool
+    public static function getByKey(?string $key): ?self
     {
         return self::where('api_key', $key)->first();
     }
