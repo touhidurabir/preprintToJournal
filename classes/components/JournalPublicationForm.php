@@ -24,15 +24,15 @@ class JournalPublicationForm extends FormComponent
 
         $this
             ->addField(new FieldText('publishingJournalUrl', [
-                'label' => 'Target OJS Journal URL',
-                'description' => 'Target OJS Journal URL',
+                'label' => __('plugins.generic.preprintToJournal.publishingJournal.url.label'),
+                'description' => __('plugins.generic.preprintToJournal.publishingJournal.url.description'),
                 'value' => '',
                 'size' => 'large',
                 'isRequired' => true,
             ]))
             ->addField(new FieldText('apiKey', [
-                'label' => 'User API Key',
-                'description' => 'User API Key',
+                'label' => __('plugins.generic.preprintToJournal.publishingJournal.apiKey.label'),
+                'description' => __('plugins.generic.preprintToJournal.publishingJournal.apiKey.description'),
                 'value' => '',
                 'size' => 'large',
                 'isRequired' => true

@@ -22,3 +22,15 @@ msgstr "Preprint to Journal Api Key"
 
 msgid "plugins.generic.preprintToJournal.user.profile.apiKey.form.title"
 msgstr "Preprint to Journal Auth Api Key"
+
+msgid "plugins.generic.preprintToJournal.publishingJournal.url.label"
+msgstr "Publishing OJS Journal Url"
+
+msgid "plugins.generic.preprintToJournal.publishingJournal.url.description"
+msgstr "The full url path of the OJS journal where this preprint will be posted as article"
+
+msgid "plugins.generic.preprintToJournal.publishingJournal.apiKey.label"
+msgstr "Preprint to Journal Publishing API Key"
+
+msgid "plugins.generic.preprintToJournal.publishingJournal.apiKey.description"
+msgstr "Unique API Key for user to authenticate with the remote publishing OJS journal"

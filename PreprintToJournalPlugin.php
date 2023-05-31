@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace APP\plugins\generic\preprintToJournal;
 
+use APP\core\Request;
 use PKP\plugins\Hook;
 use APP\core\Application;
-use APP\core\Request;
-use APP\plugins\generic\preprintToJournal\classes\components\JournalPublicationForm;
 use PKP\plugins\GenericPlugin;
+use APP\template\TemplateManager;
 use APP\plugins\generic\preprintToJournal\PreprintToJournalApiHandler;
 use APP\plugins\generic\preprintToJournal\PreprintToJournalSchemaMigration;
+use APP\plugins\generic\preprintToJournal\classes\components\JournalPublicationForm;
 use APP\plugins\generic\preprintToJournal\controllers\tab\user\CustomApiProfileTabHandler;
 
 class PreprintToJournalPlugin extends GenericPlugin
@@ -48,7 +49,6 @@ class PreprintToJournalPlugin extends GenericPlugin
         }
 
         if (self::isOJS()) {
-            Hook::add('LoadHandler', [$this, 'setApiRequestHandler']);
             $this->setApiRequestHandler();
             $this->callbackShowApiKeyTab();
             $this->setupCustomApiProfileComponentHandler();
@@ -57,19 +57,24 @@ class PreprintToJournalPlugin extends GenericPlugin
             return $success;
         }
 
+        $this->setJournalPublicationStates();
         $this->setupJournalPublicationTab();
 
         return $success;
     }
 
-    public function setupJournalPublicationTab(Request $request = null): void
+    public function setJournalPublicationStates(): void
     {
         $request ??= Application::get()->getRequest();
+        
+        Hook::add('TemplateManager::display', function (string $hookName, array $args) use ($request): bool {
+            $templateMgr = & $args[0]; /** @var \APP\template\TemplateManager $templateMgr */
+            $requestedPage = $templateMgr->getTemplateVars('requestedPage');
 
-        Hook::add('Template::Workflow::Publication', function (string $hookName, array $args) use ($request): bool {
-            $templateMgr = & $args[1]; /** @var \APP\template\TemplateManager $templateMgr */
-            $output = & $args[2];
-            
+            if(strtolower($requestedPage) !== 'workflow' ) {
+                return false;
+            }
+
             $submission = $templateMgr->getTemplateVars('submission');
             $context = $request->getContext();
             $locales = $context->getSupportedSubmissionLocaleNames();
@@ -102,10 +107,21 @@ class PreprintToJournalPlugin extends GenericPlugin
                 'components' => $components,
                 'publicationFormIds' => $publicationFormIds,
             ]);
-            
+
+            return false;
+        });
+    }
+
+    public function setupJournalPublicationTab(Request $request = null): void
+    {
+        $request ??= Application::get()->getRequest();
+
+        Hook::add('Template::Workflow::Publication', function (string $hookName, array $args) use ($request): bool {
+            $templateMgr = & $args[1]; /** @var \APP\template\TemplateManager $templateMgr */
+            $output = & $args[2];
+
             $output .= $templateMgr->fetch($this->getTemplateResource('journalPublicationTab.tpl'));
             
-            // Permit other plugins to continue interacting with this hook
             return false;
         });
 
@@ -126,7 +142,6 @@ class PreprintToJournalPlugin extends GenericPlugin
             [, $templateMgr, &$output] = $args;
             $output .= $templateMgr->fetch($this->getTemplateResource('apiKeyTab.tpl'));
             
-            // Permit other plugins to continue interacting with this hook
             return false;
         });
     }
