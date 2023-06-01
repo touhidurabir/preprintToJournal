@@ -13,9 +13,15 @@ use APP\plugins\generic\preprintToJournal\PreprintToJournalApiHandler;
 use APP\plugins\generic\preprintToJournal\PreprintToJournalSchemaMigration;
 use APP\plugins\generic\preprintToJournal\classes\components\JournalPublicationForm;
 use APP\plugins\generic\preprintToJournal\controllers\tab\user\CustomApiProfileTabHandler;
+use PKP\submission\PKPSubmission;
 
 class PreprintToJournalPlugin extends GenericPlugin
 {
+    public const OPS_JOURNAL_PUBLISH_ALLOW_PAGES = [
+        'workflow',
+        'authorDashboard',
+    ];
+
     public function __construct()
     {
 
@@ -69,13 +75,19 @@ class PreprintToJournalPlugin extends GenericPlugin
         
         Hook::add('TemplateManager::display', function (string $hookName, array $args) use ($request): bool {
             $templateMgr = & $args[0]; /** @var \APP\template\TemplateManager $templateMgr */
-            $requestedPage = $templateMgr->getTemplateVars('requestedPage');
+            $requestedpage = strtolower($templateMgr->getTemplateVars('requestedPage') ?? '');
 
-            if(strtolower($requestedPage) !== 'workflow' ) {
+            if (!$this->shouldShowJournalPublicationTabInOPS($requestedpage)) {
                 return false;
             }
 
-            $submission = $templateMgr->getTemplateVars('submission');
+            $submission = $templateMgr->getTemplateVars('submission'); /** @var \APP\submission\Submission $submission */
+            $publication = $submission?->getCurrentPublication(); /** @var \APP\publication\Publication $publication */
+
+            if ($publication?->getData('status') !== PKPSubmission::STATUS_PUBLISHED) {
+                return false;
+            }
+
             $context = $request->getContext();
             $locales = $context->getSupportedSubmissionLocaleNames();
             $locales = array_map(
@@ -86,7 +98,7 @@ class PreprintToJournalPlugin extends GenericPlugin
 
             $journalPublicationForm = new JournalPublicationForm(
                 action: '#', 
-                publication: $submission->getLatestPublication(), 
+                publication: $publication, 
                 context: $context,
                 locales: $locales
             );
@@ -119,6 +131,16 @@ class PreprintToJournalPlugin extends GenericPlugin
         Hook::add('Template::Workflow::Publication', function (string $hookName, array $args) use ($request): bool {
             $templateMgr = & $args[1]; /** @var \APP\template\TemplateManager $templateMgr */
             $output = & $args[2];
+            
+            $requestedpage = strtolower($templateMgr->getTemplateVars('requestedPage') ?? '');
+            if (!$this->shouldShowJournalPublicationTabInOPS($requestedpage)) {
+                return false;
+            }
+
+            $submission = $templateMgr->getTemplateVars('submission'); /** @var \App\submission\Submission $submission */
+            if($submission?->getCurrentPublication()?->getData('status') !== PKPSubmission::STATUS_PUBLISHED) {
+                return false;
+            }
 
             $output .= $templateMgr->fetch($this->getTemplateResource('journalPublicationTab.tpl'));
             
@@ -218,4 +240,16 @@ class PreprintToJournalPlugin extends GenericPlugin
     {
         return $request->getBaseUrl() . '/' . $this->getPluginPath() . '/css';
     }
+
+    protected function shouldShowJournalPublicationTabInOPS(string $requestedPage): bool
+    {
+        return in_array(
+            $requestedPage, 
+            collect(self::OPS_JOURNAL_PUBLISH_ALLOW_PAGES)
+                ->map(fn ($page) => strtolower($page))
+                ->filter()
+                ->toArray()
+        );
+    }
+
 }
