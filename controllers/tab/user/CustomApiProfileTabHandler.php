@@ -2,6 +2,7 @@
 
 namespace APP\plugins\generic\preprintToJournal\controllers\tab\user;
 
+use PKP\core\PKPRequest;
 use PKP\core\JSONMessage;
 use APP\notification\NotificationManager;
 use PKP\controllers\tab\user\ProfileTabHandler;

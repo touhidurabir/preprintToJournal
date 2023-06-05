@@ -9,11 +9,13 @@ use PKP\plugins\Hook;
 use APP\core\Application;
 use PKP\plugins\GenericPlugin;
 use APP\template\TemplateManager;
+use PKP\submission\PKPSubmission;
 use APP\plugins\generic\preprintToJournal\PreprintToJournalApiHandler;
 use APP\plugins\generic\preprintToJournal\PreprintToJournalSchemaMigration;
+use APP\plugins\generic\preprintToJournal\controllers\JournalPublishingHandler;
 use APP\plugins\generic\preprintToJournal\classes\components\JournalPublicationForm;
 use APP\plugins\generic\preprintToJournal\controllers\tab\user\CustomApiProfileTabHandler;
-use PKP\submission\PKPSubmission;
+use PKP\components\forms\FormComponent;
 
 class PreprintToJournalPlugin extends GenericPlugin
 {
@@ -65,19 +67,37 @@ class PreprintToJournalPlugin extends GenericPlugin
 
         $this->setJournalPublicationStates();
         $this->setupJournalPublicationTab();
+        $this->setupJournalPublishingHandler();
 
         return $success;
     }
 
-    public function setJournalPublicationStates(): void
+    public function setupJournalPublishingHandler(Request $request = null): void
+    {
+        $request ??= Application::get()->getRequest();
+
+        Hook::add('LoadComponentHandler', function (string $hookName, array $args): bool {
+            $component = $args[0];
+
+            if ($component !== 'plugins.generic.preprintToJournal.controllers.JournalPublishingHandler') {
+                return false;
+            }
+
+            JournalPublishingHandler::setPlugin($this);
+    
+            return true;
+        });
+    }
+
+    public function setJournalPublicationStates(Request $request = null): void
     {
         $request ??= Application::get()->getRequest();
         
         Hook::add('TemplateManager::display', function (string $hookName, array $args) use ($request): bool {
             $templateMgr = & $args[0]; /** @var \APP\template\TemplateManager $templateMgr */
-            $requestedpage = strtolower($templateMgr->getTemplateVars('requestedPage') ?? '');
+            $requestedPage = strtolower($templateMgr->getTemplateVars('requestedPage') ?? '');
 
-            if (!$this->shouldShowJournalPublicationTabInOPS($requestedpage)) {
+            if (!$this->shouldShowJournalPublicationTabInOPS($requestedPage)) {
                 return false;
             }
 
@@ -96,8 +116,16 @@ class PreprintToJournalPlugin extends GenericPlugin
                 $locales
             );
 
+            $action = $request->getDispatcher()->url(
+                $request,
+                Application::ROUTE_COMPONENT,
+                $context->getData('urlPath'),
+                'plugins.generic.preprintToJournal.controllers.JournalPublishingHandler',
+                'verify',
+            );
+
             $journalPublicationForm = new JournalPublicationForm(
-                action: '#', 
+                action: $action, 
                 publication: $publication, 
                 context: $context,
                 locales: $locales
@@ -132,8 +160,8 @@ class PreprintToJournalPlugin extends GenericPlugin
             $templateMgr = & $args[1]; /** @var \APP\template\TemplateManager $templateMgr */
             $output = & $args[2];
             
-            $requestedpage = strtolower($templateMgr->getTemplateVars('requestedPage') ?? '');
-            if (!$this->shouldShowJournalPublicationTabInOPS($requestedpage)) {
+            $requestedPage = strtolower($templateMgr->getTemplateVars('requestedPage') ?? '');
+            if (!$this->shouldShowJournalPublicationTabInOPS($requestedPage)) {
                 return false;
             }
 
@@ -141,6 +169,11 @@ class PreprintToJournalPlugin extends GenericPlugin
             if($submission?->getCurrentPublication()?->getData('status') !== PKPSubmission::STATUS_PUBLISHED) {
                 return false;
             }
+
+            // Had to set it here as it's getting replaced for resone, weird. need to check it back
+            $templateMgr->assign([
+                'journalPublishingUrl' => $templateMgr->getState('components')['journalPublication']['action']
+            ]);
 
             $output .= $templateMgr->fetch($this->getTemplateResource('journalPublicationTab.tpl'));
             
