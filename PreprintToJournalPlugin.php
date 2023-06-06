@@ -29,6 +29,7 @@ class PreprintToJournalPlugin extends GenericPlugin
 
     }
 
+
     /**
      * Determine if running application is OJS or not
      * 
@@ -56,6 +57,7 @@ class PreprintToJournalPlugin extends GenericPlugin
             return $success;
         }
 
+
         if (self::isOJS()) {
             $this->setApiRequestHandler();
             $this->callbackShowApiKeyTab();
@@ -68,6 +70,9 @@ class PreprintToJournalPlugin extends GenericPlugin
         $this->setJournalPublicationStates();
         $this->setupJournalPublicationTab();
         $this->setupJournalPublishingHandler();
+        $request = Application::get()->getRequest();
+        $templateMgr = TemplateManager::getManager($request);
+        $this->addJavaScript($request, $templateMgr);
 
         return $success;
     }
@@ -125,7 +130,7 @@ class PreprintToJournalPlugin extends GenericPlugin
             );
 
             $journalPublicationForm = new JournalPublicationForm(
-                action: $action, 
+                action: FormComponent::ACTION_EMIT,
                 publication: $publication, 
                 context: $context,
                 locales: $locales
@@ -140,12 +145,8 @@ class PreprintToJournalPlugin extends GenericPlugin
             $components = $templateMgr->getState('components');
             $components[FORM_JOURNAL_PUBLICATION] = $journalPublicationForm->getConfig();
 
-            $publicationFormIds = $templateMgr->getState('publicationFormIds');
-            $publicationFormIds[] = FORM_JOURNAL_PUBLICATION;
-
             $templateMgr->setState([
                 'components' => $components,
-                'publicationFormIds' => $publicationFormIds,
             ]);
 
             return false;
@@ -189,6 +190,19 @@ class PreprintToJournalPlugin extends GenericPlugin
         Hook::add('Request::getUser', function(string $hookName, array $args) use ($request): bool {
             return false;
         });
+    }
+
+    public function addJavaScript($request, $templateMgr)
+    {
+        $templateMgr->addJavaScript(
+            'PreprintToJournalComponent',
+            "{$request->getBaseUrl()}/{$this->getPluginPath()}/components/PreprintToJournal.js",
+            [
+                'inline' => false,
+                'contexts' => ['backend'],
+                'priority' => TemplateManager::STYLE_SEQUENCE_LAST
+            ]
+        );
     }
 
     public function callbackShowApiKeyTab(): void
