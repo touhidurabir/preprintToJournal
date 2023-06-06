@@ -7,15 +7,16 @@ namespace APP\plugins\generic\preprintToJournal;
 use APP\core\Request;
 use PKP\plugins\Hook;
 use APP\core\Application;
+use PKP\core\PKPContainer;
 use PKP\plugins\GenericPlugin;
 use APP\template\TemplateManager;
 use PKP\submission\PKPSubmission;
 use APP\plugins\generic\preprintToJournal\PreprintToJournalApiHandler;
 use APP\plugins\generic\preprintToJournal\PreprintToJournalSchemaMigration;
 use APP\plugins\generic\preprintToJournal\controllers\JournalPublishingHandler;
+use APP\plugins\generic\preprintToJournal\controllers\JournalSubmissionHandler;
 use APP\plugins\generic\preprintToJournal\classes\components\JournalPublicationForm;
 use APP\plugins\generic\preprintToJournal\controllers\tab\user\CustomApiProfileTabHandler;
-use PKP\components\forms\FormComponent;
 
 class PreprintToJournalPlugin extends GenericPlugin
 {
@@ -56,10 +57,13 @@ class PreprintToJournalPlugin extends GenericPlugin
             return $success;
         }
 
+        $this->registerResponseBindings();
+
         if (self::isOJS()) {
             $this->setApiRequestHandler();
             $this->callbackShowApiKeyTab();
             $this->setupCustomApiProfileComponentHandler();
+            $this->setupJournalSubmissionHandler();
             // $this->setUpUser();
 
             return $success;
@@ -215,9 +219,36 @@ class PreprintToJournalPlugin extends GenericPlugin
         });
     }
 
+    public function setupJournalSubmissionHandler(Request $request = null): void
+    {
+        $request ??= Application::get()->getRequest();
+
+        $url = $request->getDispatcher()->url(
+            $request,
+            Application::ROUTE_COMPONENT,
+            'index',
+            'plugins.generic.preprintToJournal.controllers.JournalSubmissionHandler',
+            'verify',
+        );
+
+        Hook::add('LoadComponentHandler', function (string $hookName, array $args): bool {
+            
+            $component = $args[0];
+
+            if ($component !== 'plugins.generic.preprintToJournal.controllers.JournalSubmissionHandler') {
+                return false;
+            }
+
+            JournalSubmissionHandler::setPlugin($this);
+
+            return true;
+        });
+    }
+
     public function setApiRequestHandler(): void
     {
         Hook::add('LoadHandler', function (string $hookName, array $args): bool {
+
             $page =& $args[0];
             $handler =& $args[3];
 
@@ -283,6 +314,19 @@ class PreprintToJournalPlugin extends GenericPlugin
                 ->filter()
                 ->toArray()
         );
+    }
+
+    protected function registerResponseBindings(): void
+    {
+        $container = PKPContainer::getInstance();
+
+        $container->bind(\Illuminate\Routing\RouteCollectionInterface::class, \Illuminate\Routing\RouteCollection::class);
+        $container->bind(
+            \Illuminate\View\ViewFinderInterface::class, 
+            fn ($app) => new \Illuminate\View\FileViewFinder(app(\Illuminate\Filesystem\Filesystem::class), [])
+        );
+        $container->bind(\Illuminate\Contracts\View\Factory::class, \Illuminate\View\Factory::class);
+        $container->bind(\Illuminate\Contracts\Routing\ResponseFactory::class, \Illuminate\Routing\ResponseFactory::class);
     }
 
 }

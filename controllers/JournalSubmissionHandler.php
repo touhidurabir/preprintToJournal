@@ -3,10 +3,15 @@
 namespace APP\plugins\generic\preprintToJournal\controllers;
 
 use APP\core\Request;
+use Firebase\JWT\JWT;
+use PKP\config\Config;
 use APP\handler\Handler;
 use Illuminate\Http\JsonResponse;
 use APP\plugins\generic\preprintToJournal\classes\models\ApiKey;
 use APP\plugins\generic\preprintToJournal\PreprintToJournalPlugin;
+use PKP\core\JSONMessage;
+use Throwable;
+use Slim\Http\Response as SlimResponse;
 
 class JournalSubmissionHandler extends Handler
 {
@@ -22,33 +27,45 @@ class JournalSubmissionHandler extends Handler
         return parent::authorize($request, $args, $roleAssignments);
     }
 
-    public function verify(array $args, Request $request): JsonResponse
+    public function verify(array $args, Request $request)
     {
-        $headers = getallheaders();
+        // checks
+        //      - contect exists
+        //      - API KEY available and valid
+        //      - journal allow submission
+        //      - user exists and not bloacked
+        //      - user has permission for new submission
 
-        if (!isset($headers['x-api-key'])) {
+        $context = $request->getContext(); /** @var \APP\journal\Journal $context */
+
+        if (!$context) {
             return response()->json([
-                'message' => 'Missing API Key'
-            ], 401);
+                'message' => 'Journal context not available',
+            ], 404)->send();
         }
 
-        $apiKey = ApiKey::getByKey($headers['x-api-key']);
+        $headers = getallheaders();
+        
+        if (!isset($headers['X-Api-Key'])) {
+            return response()->json([
+                'message' => 'Missing API Key',
+            ], 401)->send();
+        }
+        
+        $apiKey = ApiKey::getByKey(
+            (string) JWT::decode($headers['X-Api-Key'], Config::getVar('security', 'api_key_secret', ''), ['HS256'])
+        );
 
         if (!$apiKey) {
             return response()->json([
                 'message' => 'Invalid API Key',
-            ], 401);
+            ], 401)->send();
         }
 
         return response()->json([
             'message' => 'Successful communication done',
-        ], 200);
+        ], 200)->send();
 
-        // checks
-        //      - journal allow submission
-        //      - user exists
-        //      - user bloacked
-        //      - user has permission for new submission
     }
 }
 

@@ -2,7 +2,7 @@
 
 namespace APP\plugins\generic\preprintToJournal\classes\components;
 
-use APP\server\Server;
+use PKP\context\Context;
 use APP\publication\Publication;
 use PKP\components\forms\FieldText;
 use PKP\components\forms\FormComponent;
@@ -17,7 +17,7 @@ class JournalPublicationForm extends FormComponent
     /** @copydoc FormComponent::$method */
     public $method = 'POST';
 
-    public function __construct(string $action, Publication $publication, Server $context, array $locales = [])
+    public function __construct(string $action, Publication $publication, Context $context, array $locales = [])
     {
         $this->action = $action;
         $this->locales = $locales;
