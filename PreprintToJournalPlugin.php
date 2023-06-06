@@ -76,6 +76,13 @@ class PreprintToJournalPlugin extends GenericPlugin
         return $success;
     }
 
+    public function getOjsJournalPath(Request $request = null): string 
+    {
+        $request ??= Application::get()->getRequest();
+
+        return $request->getBaseUrl() . '/' . $request->getContext()->getData('urlPath');
+    }
+
     public function setupJournalPublishingHandler(Request $request = null): void
     {
         $request ??= Application::get()->getRequest();
@@ -195,10 +202,13 @@ class PreprintToJournalPlugin extends GenericPlugin
         });
     }
 
-    public function callbackShowApiKeyTab(): void
+    public function callbackShowApiKeyTab(Request $request = null): void
     {
-        Hook::add('Template::User::profile', function (string $hookName, array $args): bool {
+        $request ??= Application::get()->getRequest();
+
+        Hook::add('Template::User::profile', function (string $hookName, array $args) use ($request): bool {
             [, $templateMgr, &$output] = $args;
+
             $output .= $templateMgr->fetch($this->getTemplateResource('apiKeyTab.tpl'));
             
             return false;

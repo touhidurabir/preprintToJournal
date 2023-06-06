@@ -18,6 +18,8 @@ class CustomApiProfileForm extends BaseProfileForm
     public const API_KEY_NEW = 1;
     public const API_KEY_DELETE = 0;
 
+    protected PreprintToJournalPlugin $plugin;
+
     /**
      * Constructor.
      *
@@ -28,7 +30,8 @@ class CustomApiProfileForm extends BaseProfileForm
      */
     public function __construct(User $user, PreprintToJournalPlugin $plugin)
     {
-        parent::__construct($plugin->getTemplateResource('apiKeyForm.tpl'), $user);
+        $this->plugin = $plugin;
+        parent::__construct($this->plugin->getTemplateResource('apiKeyForm.tpl'), $user);
     }
 
     /**
@@ -36,8 +39,11 @@ class CustomApiProfileForm extends BaseProfileForm
      */
     public function initData()
     {
+        $request = Application::get()->getRequest();
         $user = $this->getUser();
+
         $this->setData('apiKeyEnabled', (bool) $user->getData('apiKeyEnabled'));
+        $this->setData('journalPath', $this->plugin->getOjsJournalPath());
     }
 
     /**
@@ -68,6 +74,10 @@ class CustomApiProfileForm extends BaseProfileForm
         $user = $request->getUser();
         $secret = Config::getVar('security', 'api_key_secret', '');
         $templateMgr = TemplateManager::getManager($request);
+
+        $templateMgr->assign([
+            'journalPath' => $this->plugin->getOjsJournalPath(),
+        ]);
 
         if ($secret === '') {
             $this->handleOnMissingAPISecret($templateMgr, $user);

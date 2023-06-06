@@ -55,6 +55,10 @@
 		</p>
 	{/fbvFormSection}
 
+	{fbvFormSection title="plugins.generic.preprintToJournal.user.profile.apiKey.form.journalPath.title"}
+		{fbvElement id=journalPath type="text" readonly="true" inline=true value=$journalPath size=$fbvStyles.size.MEDIUM}
+	{/fbvFormSection}
+
 	<p>
 		{capture assign="privacyUrl"}
 			{url router=\PKP\core\PKPApplication::ROUTE_PAGE page="about" op="privacy"}
