@@ -64,7 +64,6 @@ class PreprintToJournalPlugin extends GenericPlugin
             $this->callbackShowApiKeyTab();
             $this->setupCustomApiProfileComponentHandler();
             $this->setupJournalSubmissionHandler();
-            // $this->setUpUser();
 
             return $success;
         }
@@ -193,16 +192,7 @@ class PreprintToJournalPlugin extends GenericPlugin
 
     }
 
-    public function setUpUser(Request $request = null): void
-    {
-        $request ??= Application::get()->getRequest();
-
-        Hook::add('Request::getUser', function(string $hookName, array $args) use ($request): bool {
-            return false;
-        });
-    }
-
-    public function callbackShowApiKeyTab(Request $request = null): void
+    public function callbackShowApiKeyTab(): void
     {
         $request ??= Application::get()->getRequest();
 
