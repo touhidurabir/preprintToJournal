@@ -18,9 +18,7 @@ pkp.Vue.component('preprint-to-journal', {
     </div>
   `,
   data() {
-    console.log(this.formJournalPublication)
     return { 
-        forms: {[this.formJournalPublication.id]: this.formJournalPublication},
         textToShow: 'Here you can put another form instead',
         showFormJournalPublication: true
     }
