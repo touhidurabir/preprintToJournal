@@ -57,6 +57,8 @@ class PreprintToJournalPlugin extends GenericPlugin
             return $success;
         }
 
+        $request = Application::get()->getRequest();
+
         $this->registerResponseBindings();
 
         if (self::isOJS()) {
