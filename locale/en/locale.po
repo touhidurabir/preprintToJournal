@@ -37,3 +37,27 @@ msgstr "Preprint to Journal Publishing API Key"
 
 msgid "plugins.generic.preprintToJournal.publishingJournal.apiKey.description"
 msgstr "Unique API Key for user to authenticate with the remote publishing OJS journal"
+
+msgid "plugins.generic.preprintToJournal.publishingJournal.response.contextMissing"
+msgstr "Requested journal not available for submission."
+
+msgid "plugins.generic.preprintToJournal.publishingJournal.response.contextSubmissionDisable"
+msgstr "New submission disbale for journal named {$journalName}."
+
+msgid "plugins.generic.preprintToJournal.publishingJournal.response.missingApiKey"
+msgstr "Api key missing."
+
+msgid "plugins.generic.preprintToJournal.publishingJournal.response.invalidApiKey"
+msgstr "Given api key is invalid."
+
+msgid "plugins.generic.preprintToJournal.publishingJournal.response.userNotFound"
+msgstr "No user record found for associated api key."
+
+msgid "plugins.generic.preprintToJournal.publishingJournal.response.userDisable"
+msgstr "User is disable."
+
+msgid "plugins.generic.preprintToJournal.publishingJournal.response.userSubmissionPermissionDenied"
+msgstr "Do not have permission of post sibmission in the {$journalName}."
+
+msgid "plugins.generic.preprintToJournal.publishingJournal.response.success"
+msgstr "Successful authorization to post new submission."
