@@ -8,6 +8,7 @@ use APP\core\Application;
 use Illuminate\Support\Str;
 use PKP\security\authorization\UserRequiredPolicy;
 use APP\plugins\generic\preprintToJournal\PreprintToJournalPlugin;
+use PKP\facades\Locale;
 use Throwable;
 
 class JournalPublishingHandler extends Handler
@@ -31,7 +32,6 @@ class JournalPublishingHandler extends Handler
     {
         // we need to apply some validation here
         $data = $request->getUserVars();
-
         $journalPath = Str::of($data['publishingJournalUrl'])->explode('/')->filter()->last();
         $journalBaseUrl = Str::of($data['publishingJournalUrl'])->replace("/{$journalPath}", '')->__toString();
 
@@ -57,6 +57,9 @@ class JournalPublishingHandler extends Handler
                 $journalVerifyUrl,
                 [
                     'headers' => $header,
+                    'form_params' => [
+                        'preferredLocale' => Locale::getLocale()
+                    ],
                 ]
             );
 
