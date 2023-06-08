@@ -60,8 +60,8 @@ class JournalPublishingHandler extends Handler
                 ]
             );
 
-            // dump($response->getStatusCode());
-            // dump( json_decode($response->getBody(), true) );
+            dump($response->getStatusCode());
+            dump( json_decode($response->getBody(), true) );
         } catch(Throwable $exception) {
             // dump($exception);
         }

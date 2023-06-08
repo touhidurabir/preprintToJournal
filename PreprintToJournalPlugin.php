@@ -11,7 +11,6 @@ use PKP\core\PKPContainer;
 use PKP\plugins\GenericPlugin;
 use APP\template\TemplateManager;
 use PKP\submission\PKPSubmission;
-use APP\plugins\generic\preprintToJournal\PreprintToJournalApiHandler;
 use APP\plugins\generic\preprintToJournal\PreprintToJournalSchemaMigration;
 use APP\plugins\generic\preprintToJournal\controllers\JournalPublishingHandler;
 use APP\plugins\generic\preprintToJournal\controllers\JournalSubmissionHandler;
@@ -62,7 +61,6 @@ class PreprintToJournalPlugin extends GenericPlugin
         $this->registerResponseBindings();
 
         if (self::isOJS()) {
-            $this->setApiRequestHandler();
             $this->callbackShowApiKeyTab();
             $this->setupCustomApiProfileComponentHandler();
             $this->setupJournalSubmissionHandler();
@@ -77,17 +75,15 @@ class PreprintToJournalPlugin extends GenericPlugin
         return $success;
     }
 
-    public function getOjsJournalPath(Request $request = null): string 
+    public function getOjsJournalPath(): string 
     {
-        $request ??= Application::get()->getRequest();
+        $request = Application::get()->getRequest();
 
         return $request->getBaseUrl() . '/' . $request->getContext()->getData('urlPath');
     }
 
-    public function setupJournalPublishingHandler(Request $request = null): void
+    public function setupJournalPublishingHandler(): void
     {
-        $request ??= Application::get()->getRequest();
-
         Hook::add('LoadComponentHandler', function (string $hookName, array $args): bool {
             $component = $args[0];
 
@@ -101,9 +97,9 @@ class PreprintToJournalPlugin extends GenericPlugin
         });
     }
 
-    public function setJournalPublicationStates(Request $request = null): void
+    public function setJournalPublicationStates(): void
     {
-        $request ??= Application::get()->getRequest();
+        $request = Application::get()->getRequest();
         
         Hook::add('TemplateManager::display', function (string $hookName, array $args) use ($request): bool {
             $templateMgr = & $args[0]; /** @var \APP\template\TemplateManager $templateMgr */
@@ -164,11 +160,9 @@ class PreprintToJournalPlugin extends GenericPlugin
         });
     }
 
-    public function setupJournalPublicationTab(Request $request = null): void
+    public function setupJournalPublicationTab(): void
     {
-        $request ??= Application::get()->getRequest();
-
-        Hook::add('Template::Workflow::Publication', function (string $hookName, array $args) use ($request): bool {
+        Hook::add('Template::Workflow::Publication', function (string $hookName, array $args): bool {
             $templateMgr = & $args[1]; /** @var \APP\template\TemplateManager $templateMgr */
             $output = & $args[2];
             
@@ -196,9 +190,7 @@ class PreprintToJournalPlugin extends GenericPlugin
 
     public function callbackShowApiKeyTab(): void
     {
-        $request ??= Application::get()->getRequest();
-
-        Hook::add('Template::User::profile', function (string $hookName, array $args) use ($request): bool {
+        Hook::add('Template::User::profile', function (string $hookName, array $args): bool {
             [, $templateMgr, &$output] = $args;
 
             $output .= $templateMgr->fetch($this->getTemplateResource('apiKeyTab.tpl'));
@@ -223,16 +215,6 @@ class PreprintToJournalPlugin extends GenericPlugin
 
     public function setupJournalSubmissionHandler(Request $request = null): void
     {
-        $request ??= Application::get()->getRequest();
-
-        $url = $request->getDispatcher()->url(
-            $request,
-            Application::ROUTE_COMPONENT,
-            'index',
-            'plugins.generic.preprintToJournal.controllers.JournalSubmissionHandler',
-            'verify',
-        );
-
         Hook::add('LoadComponentHandler', function (string $hookName, array $args): bool {
             
             $component = $args[0];
@@ -244,22 +226,6 @@ class PreprintToJournalPlugin extends GenericPlugin
             JournalSubmissionHandler::setPlugin($this);
 
             return true;
-        });
-    }
-
-    public function setApiRequestHandler(): void
-    {
-        Hook::add('LoadHandler', function (string $hookName, array $args): bool {
-
-            $page =& $args[0];
-            $handler =& $args[3];
-
-            if ($this->getEnabled() && strtolower($page) === strtolower(PreprintToJournalApiHandler::URL_PAGE_HANDLER)) {
-                $handler = new PreprintToJournalApiHandler($this);
-                return true;
-            }
-    
-            return false;
         });
     }
 
