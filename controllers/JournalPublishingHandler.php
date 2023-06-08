@@ -56,16 +56,21 @@ class JournalPublishingHandler extends Handler
                 'POST',
                 $journalVerifyUrl,
                 [
-                    'headers' => $header,
-                    'form_params' => [
+                    'http_errors'   => false,
+                    'headers'       => $header,
+                    'form_params'   => [
                         'preferredLocale' => Locale::getLocale()
                     ],
                 ]
             );
 
-            dump($response->getStatusCode());
-            dump( json_decode($response->getBody(), true) );
+            return response()->json([
+                'data'      => json_decode($response->getBody(), true),
+                'status'    => $response->getStatusCode(),
+            ], 200)->send();
+
         } catch(Throwable $exception) {
+            
             // dump($exception);
         }
     }

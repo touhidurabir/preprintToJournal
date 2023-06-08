@@ -11,6 +11,7 @@ use PKP\core\PKPContainer;
 use PKP\plugins\GenericPlugin;
 use APP\template\TemplateManager;
 use PKP\submission\PKPSubmission;
+use PKP\components\forms\FormComponent;
 use APP\plugins\generic\preprintToJournal\PreprintToJournalSchemaMigration;
 use APP\plugins\generic\preprintToJournal\controllers\JournalPublishingHandler;
 use APP\plugins\generic\preprintToJournal\controllers\JournalSubmissionHandler;
@@ -69,6 +70,7 @@ class PreprintToJournalPlugin extends GenericPlugin
         $this->setJournalPublicationStates();
         $this->setupJournalPublicationTab();
         $this->setupJournalPublishingHandler();
+        $this->addJournalPubslishingComponent();
 
         return $success;
     }
@@ -107,7 +109,11 @@ class PreprintToJournalPlugin extends GenericPlugin
                 return false;
             }
 
-            $submission = $templateMgr->getTemplateVars('submission'); /** @var \APP\submission\Submission $submission */
+            /** @var \APP\submission\Submission $submission */
+            $submission = $request
+                ->getRouter()
+                ->getHandler()
+                ->getAuthorizedContextObject(Application::ASSOC_TYPE_SUBMISSION);
             $publication = $submission?->getCurrentPublication(); /** @var \APP\publication\Publication $publication */
 
             if ($publication?->getData('status') !== PKPSubmission::STATUS_PUBLISHED) {
@@ -132,6 +138,7 @@ class PreprintToJournalPlugin extends GenericPlugin
 
             $journalPublicationForm = new JournalPublicationForm(
                 action: $action, 
+                // action: FormComponent::ACTION_EMIT,
                 publication: $publication, 
                 context: $context,
                 locales: $locales
@@ -146,12 +153,12 @@ class PreprintToJournalPlugin extends GenericPlugin
             $components = $templateMgr->getState('components');
             $components[FORM_JOURNAL_PUBLICATION] = $journalPublicationForm->getConfig();
 
-            $publicationFormIds = $templateMgr->getState('publicationFormIds');
-            $publicationFormIds[] = FORM_JOURNAL_PUBLICATION;
+            // $publicationFormIds = $templateMgr->getState('publicationFormIds');
+            // $publicationFormIds[] = FORM_JOURNAL_PUBLICATION;
 
             $templateMgr->setState([
                 'components' => $components,
-                'publicationFormIds' => $publicationFormIds,
+                // 'publicationFormIds' => $publicationFormIds,
             ]);
 
             return false;
@@ -227,6 +234,21 @@ class PreprintToJournalPlugin extends GenericPlugin
         });
     }
 
+    public function addJournalPubslishingComponent(): void
+    {
+        $templateMgr = TemplateManager::getManager(); /** @var \APP\template\TemplateManager $templateMgr */
+
+        $templateMgr->addJavaScript(
+            name: 'PreprintToJournalComponent',
+            script: $this->getJavaScriptURL() . DIRECTORY_SEPARATOR . 'PreprintToJournal.js',
+            args: [
+                'inline' => false,
+                'contexts' => ['backend'],
+                'priority' => TemplateManager::STYLE_SEQUENCE_LAST
+            ]
+        );
+    }
+
     /**
      * Provide a name for this plugin
      *
@@ -258,17 +280,17 @@ class PreprintToJournalPlugin extends GenericPlugin
     /**
      * Get the JavaScript URL for this plugin.
      */
-    public function getJavaScriptURL($request)
+    public function getJavaScriptURL()
     {
-        return $request->getBaseUrl() . '/' . $this->getPluginPath() . '/js';
+        return Application::get()->getRequest()->getBaseUrl() . DIRECTORY_SEPARATOR . $this->getPluginPath() . DIRECTORY_SEPARATOR . 'js';
     }
 
     /**
      * Get the CSS URL for this plugin.
      */
-    public function getCssURL($request)
+    public function getCssURL()
     {
-        return $request->getBaseUrl() . '/' . $this->getPluginPath() . '/css';
+        return Application::get()->getRequest()->getBaseUrl() . DIRECTORY_SEPARATOR . $this->getPluginPath() . DIRECTORY_SEPARATOR . 'css';
     }
 
     protected function shouldShowJournalPublicationTabInOPS(string $requestedPage): bool
