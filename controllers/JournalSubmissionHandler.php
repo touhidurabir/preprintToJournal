@@ -67,12 +67,12 @@ class JournalSubmissionHandler extends Handler
         }
         
         $secret = Config::getVar('security', 'api_key_secret', '');
-        $headers = new stdClass;
+        $jwtHeaders = new stdClass;
         $apiKey = ApiKey::getByKey(
             ((Array)JWT::decode(
                 $headers['X-Api-Key'], 
                 new Key($secret, 'HS256'), 
-                $headers)
+                $jwtHeaders)
             )[0]
         );
 
