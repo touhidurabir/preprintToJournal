@@ -3,7 +3,7 @@
 namespace APP\plugins\generic\preprintToJournal\controllers\tab\user\form;
 
 use PKP\user\User;
-use Firebase\JWT\JWT;
+use PKP\core\PKPJwt as JWT;
 use PKP\config\Config;
 use APP\core\Application;
 use APP\template\TemplateManager;
@@ -88,7 +88,7 @@ class CustomApiProfileForm extends BaseProfileForm
 
         $templateMgr->assign(
             $apiKey ? [
-                'apiKey' => JWT::encode($apiKey, $secret, 'HS256'),
+                'apiKey' => JWT::encode([$apiKey], $secret, 'HS256'),
                 'apiKeyAction' => self::API_KEY_DELETE,
                 'apiKeyActionTextKey' => 'user.apiKey.remove',
             ] : [

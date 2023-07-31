@@ -2,19 +2,18 @@
 
 namespace APP\plugins\generic\preprintToJournal\controllers;
 
-use Throwable;
+use stdClass;
 use APP\core\Request;
 use APP\facades\Repo;
-use Firebase\JWT\JWT;
+use Firebase\JWT\Key;
 use PKP\config\Config;
 use PKP\security\Role;
+use PKP\facades\Locale;
 use APP\handler\Handler;
-use PKP\core\JSONMessage;
-use Illuminate\Http\JsonResponse;
-use Slim\Http\Response as SlimResponse;
+use PKP\core\PKPJwt as JWT;
+use Illuminate\Http\Response;
 use APP\plugins\generic\preprintToJournal\classes\models\ApiKey;
 use APP\plugins\generic\preprintToJournal\PreprintToJournalPlugin;
-use PKP\facades\Locale;
 
 class JournalSubmissionHandler extends Handler
 {
@@ -45,7 +44,7 @@ class JournalSubmissionHandler extends Handler
         if (!$context) {
             return response()->json([
                 'message' => __('plugins.generic.preprintToJournal.publishingJournal.response.contextMissing'),
-            ], 404)->send();
+            ], Response::HTTP_NOT_FOUND)->send();
         }
 
         if ((bool)$context->getData('disableSubmissions')) {
@@ -56,7 +55,7 @@ class JournalSubmissionHandler extends Handler
                         'journalName' => $context->getName('name')
                     ]
                 ),
-            ], 406)->send();
+            ], Response::HTTP_NOT_ACCEPTABLE)->send();
         }
 
         $headers = getallheaders();
@@ -64,17 +63,23 @@ class JournalSubmissionHandler extends Handler
         if (!isset($headers['X-Api-Key'])) {
             return response()->json([
                 'message' => __('plugins.generic.preprintToJournal.publishingJournal.response.missingApiKey'),
-            ], 401)->send();
+            ], Response::HTTP_UNAUTHORIZED)->send();
         }
         
+        $secret = Config::getVar('security', 'api_key_secret', '');
+        $headers = new stdClass;
         $apiKey = ApiKey::getByKey(
-            (string) JWT::decode($headers['X-Api-Key'], Config::getVar('security', 'api_key_secret', ''), ['HS256'])
+            ((Array)JWT::decode(
+                $headers['X-Api-Key'], 
+                new Key($secret, 'HS256'), 
+                $headers)
+            )[0]
         );
 
         if (!$apiKey) {
             return response()->json([
                 'message' => __('plugins.generic.preprintToJournal.publishingJournal.response.invalidApiKey'),
-            ], 401)->send();
+            ], Response::HTTP_UNAUTHORIZED)->send();
         }
 
         $user = Repo::user()->get($apiKey->getUserId()); /** @var \PKP\user\User $user */
@@ -82,13 +87,13 @@ class JournalSubmissionHandler extends Handler
         if (!$user) {
             return response()->json([
                 'message' => __('plugins.generic.preprintToJournal.publishingJournal.response.userNotFound'),
-            ], 404)->send();
+            ], Response::HTTP_NOT_FOUND)->send();
         }
 
         if($user->getDisabled()) {
             return response()->json([
                 'message' => __('plugins.generic.preprintToJournal.publishingJournal.response.userDisable'),
-            ], 406)->send();
+            ], Response::HTTP_NOT_ACCEPTABLE)->send();
         }
 
         if(!$user->hasRole([Role::ROLE_ID_MANAGER, Role::ROLE_ID_SUB_EDITOR, Role::ROLE_ID_AUTHOR], $context->getId())) {
@@ -99,12 +104,12 @@ class JournalSubmissionHandler extends Handler
                         'journalName' => $context->getName('name')
                     ]
                 ),
-            ], 406)->send();
+            ], Response::HTTP_NOT_ACCEPTABLE)->send();
         }
 
         return response()->json([
             'message' => __('plugins.generic.preprintToJournal.publishingJournal.response.success'),
-        ], 200)->send();
+        ], Response::HTTP_OK)->send();
 
     }
 }
