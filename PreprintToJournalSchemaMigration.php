@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 namespace APP\plugins\generic\preprintToJournal;
 
 use APP\core\Application;
@@ -12,30 +10,67 @@ use APP\plugins\generic\preprintToJournal\PreprintToJournalPlugin;
 
 class PreprintToJournalSchemaMigration extends Migration
 {
+    protected const TABLE_PREFIX = 'preprint_to_journal_';
+
+    public static function generateTableName(string $tableName): string
+    {
+        return static::TABLE_PREFIX . $tableName;
+    }
+
     /**
      * Run the migrations.
      */
     public function up(): void
     {
         if ( PreprintToJournalPlugin::isOJS() ) {
-            Schema::create('preprint_to_journal_api_keys', function (Blueprint $table) {
+
+            Schema::create(static::generateTableName('services'), function (Blueprint $table) {
                 $table->unsignedBigInteger('id')->autoIncrement();
-                $table->bigInteger('user_id');
-                $table->string('api_key')->unique();
+                $table->string('url', 255);
+                $table->string('ip')->nullable();
+                $table->integer('status')->unsigned()->default(1);
+                $table->timestamp('response_at')->nullable();
+                $table->bigInteger('responder_id')->unsigned()->nullable();
                 $table->timestamps();
                 $table->softDeletes();
-
+    
                 $table
-                    ->foreign('user_id')
+                    ->foreign('responder_id')
                     ->references('user_id')
                     ->on('users')
-                    ->onDelete('cascase');
+                    ->onDelete('set null');
             });
 
             return;
         }
 
-        Schema::create('preprint_to_journal', function (Blueprint $table) {
+        Schema::create(static::generateTableName('services'), function (Blueprint $table) {
+            $table->unsignedBigInteger('id')->autoIncrement();
+            $table->bigInteger('context_id');
+            $table->string('name', 255);
+            $table->text('description')->nullable();
+            $table->string('url', 255);
+            $table->string('ip')->nullable();
+            $table->integer('status')->unsigned()->default(1);
+            $table->timestamp('response_at')->nullable();
+            $table->bigInteger('creator_id')->nullable();
+            $table->timestamps();
+            $table->softDeletes();
+
+            $table
+                ->foreign('context_id')
+                ->references(Application::getContextDAO()->primaryKeyColumn)
+                ->on(Application::getContextDAO()->tableName)
+                ->onDelete('cascade');
+
+            $table
+                ->foreign('creator_id')
+                ->references('user_id')
+                ->on('users')
+                ->onDelete('set null');
+        });
+
+        Schema::create(static::generateTableName('submissions'), function (Blueprint $table) {
             $table->unsignedBigInteger('id')->autoIncrement();
             $table->bigInteger('context_id');
             $table->bigInteger('submission_id');
@@ -55,9 +90,9 @@ class PreprintToJournalSchemaMigration extends Migration
                 ->onDelete('cascade');
         });
 
-        Schema::create('ldn_notification_mailbox', function (Blueprint $table) {
+        Schema::create(static::generateTableName('notifications'), function (Blueprint $table) {
             $table->unsignedBigInteger('id')->autoIncrement();
-            $table->unsignedBigInteger('preprint_to_journal_id');
+            $table->unsignedBigInteger('submission_id');
             $table->string('notification_id');
             $table->string('from_id');
             $table->text('told_to');
@@ -69,9 +104,9 @@ class PreprintToJournalSchemaMigration extends Migration
             $table->softDeletes();
 
             $table
-                ->foreign('preprint_to_journal_id')
+                ->foreign('submission_id')
                 ->references('id')
-                ->on('preprint_to_journal')
+                ->on(static::generateTableName('submissions'))
                 ->onDelete('cascade');
         });
     }
@@ -82,11 +117,12 @@ class PreprintToJournalSchemaMigration extends Migration
     public function down(): void
     {
         if (PreprintToJournalPlugin::isOJS()) {
-            Schema::drop('preprint_to_journal_api_keys');
+            Schema::drop(static::generateTableName('services'));
             return;
         }
 
-        Schema::drop('ldn_notification_mailbox');
-        Schema::drop('preprint_to_journal');
+        Schema::drop(static::generateTableName('services'));
+        Schema::drop(static::generateTableName('notifications'));
+        Schema::drop(static::generateTableName('submissions'));
     }
 }

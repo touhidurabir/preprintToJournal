@@ -1,22 +1,24 @@
 <?php
 
-declare(strict_types=1);
-
 namespace APP\plugins\generic\preprintToJournal;
 
 use APP\core\Request;
 use PKP\plugins\Hook;
 use APP\core\Application;
-use PKP\core\PKPContainer;
+use PKP\core\JSONMessage;
+use PKP\linkAction\LinkAction;
 use PKP\plugins\GenericPlugin;
 use APP\template\TemplateManager;
 use PKP\submission\PKPSubmission;
+use PKP\linkAction\request\AjaxModal;
 use PKP\components\forms\FormComponent;
 use APP\plugins\generic\preprintToJournal\PreprintToJournalSchemaMigration;
 use APP\plugins\generic\preprintToJournal\controllers\JournalPublishingHandler;
 use APP\plugins\generic\preprintToJournal\controllers\JournalSubmissionHandler;
 use APP\plugins\generic\preprintToJournal\classes\components\JournalPublicationForm;
 use APP\plugins\generic\preprintToJournal\controllers\tab\user\CustomApiProfileTabHandler;
+use APP\plugins\generic\preprintToJournal\controllers\tab\service\PreprintToJournalServiceTabHandler;
+use APP\plugins\generic\preprintToJournal\controllers\tab\service\PreprintToJournalServiceGridHandler;
 
 class PreprintToJournalPlugin extends GenericPlugin
 {
@@ -57,13 +59,8 @@ class PreprintToJournalPlugin extends GenericPlugin
             return $success;
         }
 
-        $this->registerResponseBindings();
-
         if (self::isOJS()) {
-            $this->callbackShowApiKeyTab();
-            $this->setupCustomApiProfileComponentHandler();
             $this->setupJournalSubmissionHandler();
-
             return $success;
         }
 
@@ -72,7 +69,115 @@ class PreprintToJournalPlugin extends GenericPlugin
         $this->setupJournalPublishingHandler();
         $this->addJournalPubslishingComponent();
 
+        $this->setupServiceSettingsComponents();
+        $this->setupJournalServiceListComponent();
+
         return $success;
+    }
+
+    /**
+     * Get a list of link actions for plugin management.
+     *
+     * @param \APP\core\Request $request    The PKPRequest object
+     * @param array             $actionArgs The list of action args to be included in request URLs.
+     *
+     * @return array                        List of LinkActions
+     */
+    public function getActions($request, $actionArgs)
+    {
+        // Get the existing actions
+        $actions = parent::getActions($request, $actionArgs);
+
+        // Only add the settings action when the plugin is enabled
+        if (!$this->getEnabled()) {
+            return $actions;
+        }
+
+        // Create a LinkAction that will make a request to the
+        // plugin's `manage` method with the `settings` verb.
+        $settingsAction = new LinkAction(
+            'settings',
+            new AjaxModal(
+                $request->getRouter()->url(
+                    $request,
+                    null,
+                    null,
+                    'manage',
+                    null,
+                    [
+                        'verb' => 'settings',
+                        'plugin' => $this->getName(),
+                        'category' => 'generic'
+                    ]
+                ),
+                $this->getDisplayName()
+            ),
+            __('manager.plugins.settings'),
+            null
+        );
+
+        // Add the LinkAction to the existing actions.
+        // Make it the first action to be consistent with
+        // other plugins.
+        array_unshift($actions, $settingsAction);
+
+        return $actions;
+    }
+
+    /**
+     * Load a form when the `settings` button is clicked and
+     * save the form when the user saves it.
+     *
+     * @param array             $args       The list of action args to be included in request URLs.
+     * @param \APP\core\Request $request    The PKPRequest object
+     * 
+     * @return \PKP\core\JSONMessage
+     */
+    public function manage($args, $request)
+    {
+        if ($request->getUserVar('verb') === 'settings') {
+            
+            $templateManager = TemplateManager::getManager();
+            
+            return new JSONMessage(
+                true, 
+                $templateManager->fetch($this->getTemplateResource('settings.tpl'))
+            );
+        }
+
+        return parent::manage($args, $request);
+    }
+
+    public function setupServiceSettingsComponents(): void
+    {
+        Hook::add('LoadComponentHandler', function (string $hookName, array $args): bool {
+
+            $component = $args[0];
+
+            if ($component !== 'plugins.generic.preprintToJournal.controllers.tab.service.PreprintToJournalServiceTabHandler') {
+                return false;
+            }
+
+            PreprintToJournalServiceTabHandler::setPlugin($this);
+
+            return true;
+        });
+    }
+
+    public function setupJournalServiceListComponent(): void
+    {
+        Hook::add('LoadComponentHandler', function (string $hookName, array $args): bool {
+
+            $component = $args[0];
+
+            if ($component !== 'plugins.generic.preprintToJournal.controllers.tab.service.PreprintToJournalServiceGridHandler') {
+                return false;
+            }
+
+            PreprintToJournalServiceGridHandler::setPlugin($this);
+
+            return true;
+        });
     }
 
     public function getOjsJournalPath(): string 
@@ -193,31 +298,6 @@ class PreprintToJournalPlugin extends GenericPlugin
 
     }
 
-    public function callbackShowApiKeyTab(): void
-    {
-        Hook::add('Template::User::profile', function (string $hookName, array $args): bool {
-            [, $templateMgr, &$output] = $args;
-
-            $output .= $templateMgr->fetch($this->getTemplateResource('apiKeyTab.tpl'));
-            
-            return false;
-        });
-    }
-
-    public function setupCustomApiProfileComponentHandler(): void
-    {
-        Hook::add('LoadComponentHandler', function (string $hookName, array $args): bool {
-            $component = $args[0];
-            if ($component !== 'plugins.generic.preprintToJournal.controllers.tab.user.CustomApiProfileTabHandler') {
-                return false;
-            }
-
-            CustomApiProfileTabHandler::setPlugin($this);
-
-            return true;
-        });
-    }
-
     public function setupJournalSubmissionHandler(Request $request = null): void
     {
         Hook::add('LoadComponentHandler', function (string $hookName, array $args): bool {
@@ -302,19 +382,6 @@ class PreprintToJournalPlugin extends GenericPlugin
                 ->filter()
                 ->toArray()
         );
-    }
-
-    protected function registerResponseBindings(): void
-    {
-        $container = PKPContainer::getInstance();
-
-        $container->bind(\Illuminate\Routing\RouteCollectionInterface::class, \Illuminate\Routing\RouteCollection::class);
-        $container->bind(
-            \Illuminate\View\ViewFinderInterface::class, 
-            fn ($app) => new \Illuminate\View\FileViewFinder(app(\Illuminate\Filesystem\Filesystem::class), [])
-        );
-        $container->bind(\Illuminate\Contracts\View\Factory::class, \Illuminate\View\Factory::class);
-        $container->bind(\Illuminate\Contracts\Routing\ResponseFactory::class, \Illuminate\Routing\ResponseFactory::class);
     }
 
 }

@@ -61,3 +61,63 @@ msgstr "Do not have permission of post sibmission in the {$journalName}."
 
 msgid "plugins.generic.preprintToJournal.publishingJournal.response.success"
 msgstr "Successful authorization to post new submission."
+
+msgid "plugins.generic.preprintToJournal.service.create.name"
+msgstr "Add New Service"
+
+msgid "plugins.generic.preprintToJournal.service.index.name"
+msgstr "Services."
+
+msgid "plugins.generic.preprintToJournal.service.from.add.heading"
+msgstr "Add a journal service to publish the preprint."
+
+msgid "plugins.generic.preprintToJournal.service.from.add.description"
+msgstr "These settings help identify which services will be showen as list for publish preprint as a journal article."
+
+msgid "plugins.generic.preprintToJournal.service.from.field.name"
+msgstr "Journal Service Name"
+
+msgid "plugins.generic.preprintToJournal.service.from.field.description"
+msgstr "Description"
+
+msgid "plugins.generic.preprintToJournal.service.from.field.url"
+msgstr "Service URL"
+
+msgid "plugins.generic.preprintToJournal.service.from.field.ip"
+msgstr "Service IP Address"
+
+msgid "plugins.generic.preprintToJournal.service.from.add.button.text"
+msgstr "Add New Journal Service."
+
+msgid "plugins.generic.preprintToJournal.service.from.update.button.text"
+msgstr "Update Journal Service."
+
+msgid "plugins.generic.preprintToJournal.service.from.field.name.required"
+msgstr "Journal Service name is required."
+
+msgid "plugins.generic.preprintToJournal.service.delete.confirm"
+msgstr "Are you sure you want to delele the service {$ServiceName}"
+
+msgid "plugins.generic.preprintToJournal.service.list.title"
+msgstr "White listed journal services"
+
+msgid "plugins.generic.preprintToJournal.service.list.name"
+msgstr "Name"
+
+msgid "plugins.generic.preprintToJournal.service.list.url"
+msgstr "Url"
+
+msgid "plugins.generic.preprintToJournal.service.list.ip"
+msgstr "IP"
+
+msgid "plugins.generic.preprintToJournal.service.list.status"
+msgstr "Status"
+
+msgid "plugins.generic.preprintToJournal.service.status.response.pending"
+msgstr "Pending Request"
+
+msgid "plugins.generic.preprintToJournal.service.status.response.authorized"
+msgstr "Authorized"
+
+msgid "plugins.generic.preprintToJournal.service.status.response.rejected"
+msgstr "Rejected"
