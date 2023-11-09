@@ -26,11 +26,12 @@ class PreprintToJournalSchemaMigration extends Migration
 
             Schema::create(static::generateTableName('services'), function (Blueprint $table) {
                 $table->unsignedBigInteger('id')->autoIncrement();
+                $table->unsignedBigInteger('remote_service_id');
                 $table->string('url', 255);
                 $table->string('ip')->nullable();
                 $table->integer('status')->unsigned()->default(1);
                 $table->timestamp('response_at')->nullable();
-                $table->bigInteger('responder_id')->unsigned()->nullable();
+                $table->bigInteger('responder_id')->nullable();
                 $table->timestamps();
                 $table->softDeletes();
     
