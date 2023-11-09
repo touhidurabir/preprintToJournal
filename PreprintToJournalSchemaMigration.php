@@ -119,7 +119,7 @@ class PreprintToJournalSchemaMigration extends Migration
     public function down(): void
     {
         if (PreprintToJournalPlugin::isOJS()) {
-            Schema::drop(static::generateTableName('services'));
+            Schema::drop(static::generateTableName('remote_services'));
             return;
         }
 
