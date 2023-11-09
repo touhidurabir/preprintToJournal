@@ -112,12 +112,15 @@ class ServiceForm extends Form
             'name'          => $this->getData('name'),
             'description'   => $this->getData('description'),
             'url'           => $this->getData('url'),
-            'ip'            => $this->getData('ip'),
+            'ip'            => $this->getData('ip') ?? gethostbyname(parse_url($this->getData('url'), PHP_URL_HOST)),
         ];
 
         $this->service
             ? $this->service->update($data) 
-            : Service::create(array_merge($data, ['status' => Service::STATUS_UNAUTHORIZED]));
+            : Service::create(array_merge($data, [
+                'status'        => Service::STATUS_UNAUTHORIZED,
+                'creator_id'    => Application::get()->getRequest()->getUser()->getId(),
+            ]));
 
         $notificationMgr = new NotificationManager();
         $notificationMgr->createTrivialNotification(

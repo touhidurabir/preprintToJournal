@@ -11,6 +11,7 @@ use APP\notification\NotificationManager;
 use APP\plugins\generic\preprintToJournal\classes\models\Service;
 use APP\plugins\generic\preprintToJournal\PreprintToJournalPlugin;
 use APP\plugins\generic\preprintToJournal\controllers\tab\service\form\ServiceForm;
+use APP\plugins\generic\preprintToJournal\controllers\tab\service\JournalRegistration;
 
 class PreprintToJournalServiceTabHandler extends Handler
 {
@@ -85,6 +86,28 @@ class PreprintToJournalServiceTabHandler extends Handler
     {
         if ($args['id']) {
             Service::find($args['id'])->delete();
+
+            $notificationMgr = new NotificationManager();
+            $notificationMgr->createTrivialNotification($request->getUser()->getId());
+
+            return \PKP\db\DAO::getDataChangedEvent($args['id']);
+        }
+
+        return new JSONMessage(false);
+    }
+
+    public function register(array $args, PKPRequest $request): JSONMessage
+    {
+        $service = Service::find($args['id'] ?? null);
+
+        if (!$service) {
+            return new JSONMessage(false);
+        }
+
+        if ((new JournalRegistration)->register($service)) {
+            
+            $notificationMgr = new NotificationManager();
+            $notificationMgr->createTrivialNotification($request->getUser()->getId());
 
             return \PKP\db\DAO::getDataChangedEvent($args['id']);
         }

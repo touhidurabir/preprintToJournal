@@ -5,6 +5,7 @@ namespace APP\plugins\generic\preprintToJournal\controllers;
 use stdClass;
 use APP\core\Request;
 use APP\facades\Repo;
+use APP\plugins\generic\preprintToJournal\classes\models\RemoteService;
 use Firebase\JWT\Key;
 use PKP\config\Config;
 use PKP\security\Role;
@@ -14,6 +15,7 @@ use PKP\core\PKPJwt as JWT;
 use Illuminate\Http\Response;
 use APP\plugins\generic\preprintToJournal\classes\models\ApiKey;
 use APP\plugins\generic\preprintToJournal\PreprintToJournalPlugin;
+use Illuminate\Http\JsonResponse;
 
 class JournalSubmissionHandler extends Handler
 {
@@ -111,6 +113,28 @@ class JournalSubmissionHandler extends Handler
             'message' => __('plugins.generic.preprintToJournal.publishingJournal.response.success'),
         ], Response::HTTP_OK)->send();
 
+    }
+
+    public function registerJournalService(array $args, Request $request): JsonResponse
+    {
+        $context = $request->getContext(); /** @var \APP\journal\Journal $context */
+
+        if (!$context) {
+            return response()->json([
+                'message' => __('plugins.generic.preprintToJournal.publishingJournal.response.contextMissing'),
+            ], Response::HTTP_NOT_FOUND)->send();
+        }
+
+        $remoteService = RemoteService::create([
+            'remote_service_id' => $request->getUserVar('remote_service_id'),
+            'url'   => $request->getUserVar('url'),
+            'ip'    => $request->getUserVar('ip'),
+            'status' => RemoteService::STATUS_UNAUTHORIZED,
+        ]);
+
+        return response()->json([
+            'message' => 'Remote service registered successfully',
+        ], Response::HTTP_OK)->send();
     }
 }
 

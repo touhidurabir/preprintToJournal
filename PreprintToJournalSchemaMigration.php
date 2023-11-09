@@ -24,7 +24,7 @@ class PreprintToJournalSchemaMigration extends Migration
     {
         if ( PreprintToJournalPlugin::isOJS() ) {
 
-            Schema::create(static::generateTableName('services'), function (Blueprint $table) {
+            Schema::create(static::generateTableName('remote_services'), function (Blueprint $table) {
                 $table->unsignedBigInteger('id')->autoIncrement();
                 $table->unsignedBigInteger('remote_service_id');
                 $table->string('url', 255);
@@ -54,6 +54,7 @@ class PreprintToJournalSchemaMigration extends Migration
             $table->string('ip')->nullable();
             $table->integer('status')->unsigned()->default(1);
             $table->timestamp('response_at')->nullable();
+            $table->timestamp('registered_at')->nullable();
             $table->bigInteger('creator_id')->nullable();
             $table->timestamps();
             $table->softDeletes();

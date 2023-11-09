@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use APP\plugins\generic\preprintToJournal\PreprintToJournalSchemaMigration;
 
-class Service extends Model
+class RemoteService extends Model
 {
     use SoftDeletes;
 
@@ -35,7 +35,7 @@ class Service extends Model
      */
     public function getTable()
     {
-        return PreprintToJournalSchemaMigration::generateTableName('services');
+        return PreprintToJournalSchemaMigration::generateTableName('remote_services');
     }
 
     /**
@@ -48,14 +48,6 @@ class Service extends Model
             static::STATUS_AUTHORIZED   => 'plugins.generic.preprintToJournal.service.status.response.authorized',
             static::STATUS_REJECTED     => 'plugins.generic.preprintToJournal.service.status.response.rejected',
         };
-    }
-
-    /**
-     * Get the table associated with the model.
-     */
-    public function isRegisterToJournal(): bool
-    {
-        return $this->registered_at ? true: false;
     }
 
 }

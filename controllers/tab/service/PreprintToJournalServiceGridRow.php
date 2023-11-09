@@ -83,5 +83,33 @@ class PreprintToJournalServiceGridRow extends GridRow
                 'delete'
             )
         );
+
+        if (!$element->isRegisterToJournal()) {
+
+            $this->addAction(
+                new LinkAction(
+                    'register',
+                    new RemoteActionConfirmationModal(
+                        $request->getSession(),
+                        __(
+                            'plugins.generic.preprintToJournal.service.register.confirm', 
+                            ['ServiceName' => $element->name]
+                        ),
+                        null,
+                        $request->getDispatcher()->url(
+                            $request,
+                            Application::ROUTE_COMPONENT,
+                            $context->getData('urlPath'),
+                            'plugins.generic.preprintToJournal.controllers.tab.service.PreprintToJournalServiceTabHandler',
+                            'register',
+                            null,
+                            ['id' => $rowId]
+                        )
+                    ),
+                    __('plugins.generic.preprintToJournal.service.action.register'),
+                    'register'
+                )
+            );
+        }
     }
 }

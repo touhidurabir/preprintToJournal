@@ -96,7 +96,10 @@ msgid "plugins.generic.preprintToJournal.service.from.field.name.required"
 msgstr "Journal Service name is required."
 
 msgid "plugins.generic.preprintToJournal.service.delete.confirm"
-msgstr "Are you sure you want to delele the service {$ServiceName}"
+msgstr "Are you sure you want to delele the service {$ServiceName}?"
+
+msgid "plugins.generic.preprintToJournal.service.register.confirm"
+msgstr "Are you sure you want to run the registration process for the service {$ServiceName} again?"
 
 msgid "plugins.generic.preprintToJournal.service.list.title"
 msgstr "White listed journal services"
@@ -121,3 +124,12 @@ msgstr "Authorized"
 
 msgid "plugins.generic.preprintToJournal.service.status.response.rejected"
 msgstr "Rejected"
+
+msgid "plugins.generic.preprintToJournal.service.action.register"
+msgstr "Register"
+
+msgid "plugins.generic.preprintToJournal.service.action.authorize"
+msgstr "Authorize"
+
+msgid "plugins.generic.preprintToJournal.service.action.reject"
+msgstr "Reject"
