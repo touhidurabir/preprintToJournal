@@ -27,7 +27,7 @@ class JournalPublishingHandler extends Handler
     public function authorize($request, &$args, $roleAssignments)
     {
         // User must be logged in
-        $this->addPolicy(new UserRequiredPolicy($request));
+        // $this->addPolicy(new UserRequiredPolicy($request));
 
         return parent::authorize($request, $args, $roleAssignments);
     }
@@ -90,7 +90,7 @@ class JournalPublishingHandler extends Handler
         }
 
         (new ServiceManager)
-            ->registerRemoteResponse($service, $request->getUserVar('statusResponse'));
+            ->registerRemoteResponse($service, $request->getUserVar('status'));
         
         return response()->json([
             'message'      => 'Remote journal service response store successfully',

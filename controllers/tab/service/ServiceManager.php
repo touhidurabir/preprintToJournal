@@ -53,7 +53,7 @@ class ServiceManager
                     'form_params'   => [
                         'name'              => $context->getData('name', Locale::getPrimaryLocale()),
                         'remote_service_id' => $service->id,
-                        'url'               => $request->getBaseUrl() . "/index.php/" . $context->getData('path'),
+                        'url'               => $request->getBaseUrl() . "/index.php/" . $context->getData('urlPath'),
                         'ip'                => gethostbyname(parse_url($request->getBaseUrl(), PHP_URL_HOST)),
                     ],
                 ]
@@ -80,6 +80,9 @@ class ServiceManager
 
     public function respond(RemoteService $remoteService, int $statusResponse): bool
     {
+        $contextService = Services::get('context'); /** @var \APP\services\ContextService $contextService */
+        $context = $contextService->get((int)$remoteService->context_id); /** @var \App\server\Server $context */
+
         $request = Application::get()->getRequest();
         $serverPath = last(explode('/', $remoteService->url));
 
@@ -91,7 +94,11 @@ class ServiceManager
                 'plugins.generic.preprintToJournal.controllers.JournalPublishingHandler',
                 'registerRemoteJournalServiceResponse',
             )
-        )->replace($request->getBaseUrl(), $remoteService->url)->__toString();
+        )
+        ->replace($request->getBaseUrl() . '/index.php/' . $context->getData('urlPath'), $remoteService->url)
+        ->__toString();
+
+        ray($serverResponseUrl);
 
         $httpClient = Application::get()->getHttpClient();
         $header = [

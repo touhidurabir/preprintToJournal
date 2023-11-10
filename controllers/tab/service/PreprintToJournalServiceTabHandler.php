@@ -122,7 +122,7 @@ class PreprintToJournalServiceTabHandler extends Handler
             return new JSONMessage(false);
         }
 
-        if ((new ServiceManager)->respond($remoteService, $args['responseStatus'])) {
+        if ((new ServiceManager)->respond($remoteService, $args['statusResponse'])) {
             $notificationMgr = new NotificationManager();
             $notificationMgr->createTrivialNotification($request->getUser()->getId());
 
