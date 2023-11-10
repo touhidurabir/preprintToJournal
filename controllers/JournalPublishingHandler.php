@@ -90,7 +90,7 @@ class JournalPublishingHandler extends Handler
         }
 
         (new ServiceManager)
-            ->registerRemoteResponse($service, $request->getUserVar('status'));
+            ->registerRemoteResponse($service, $request->getUserVar('statusResponse'));
         
         return response()->json([
             'message'      => 'Remote journal service response store successfully',

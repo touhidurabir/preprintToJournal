@@ -98,8 +98,6 @@ class ServiceManager
         ->replace($request->getBaseUrl() . '/index.php/' . $context->getData('urlPath'), $remoteService->url)
         ->__toString();
 
-        ray($serverResponseUrl);
-
         $httpClient = Application::get()->getHttpClient();
         $header = [
             'Accept'    => 'application/json',
