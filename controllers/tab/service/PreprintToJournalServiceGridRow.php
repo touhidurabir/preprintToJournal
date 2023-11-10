@@ -4,6 +4,7 @@ namespace APP\plugins\generic\preprintToJournal\controllers\tab\service;
 
 use APP\core\Services;
 use APP\core\Application;
+use APP\plugins\generic\preprintToJournal\classes\models\RemoteService;
 use PKP\core\PKPApplication;
 use PKP\linkAction\LinkAction;
 use PKP\controllers\grid\GridRow;
@@ -29,12 +30,12 @@ class PreprintToJournalServiceGridRow extends GridRow
         // Is this a new row or an existing row?
         $element = $this->getData();
 
-        assert($element instanceof Service);
+        assert($element instanceof Service || $element instanceof RemoteService);
 
         $rowId = $this->getId();
 
         $contextService = Services::get('context'); /** @var \APP\services\ContextService $contextService */
-        $context = $contextService->get((int)$element->context_id);
+        $context = $contextService->get((int)$element->context_id) ?? $request->getContext();
 
         $this->addAction(
             new LinkAction(
@@ -84,7 +85,7 @@ class PreprintToJournalServiceGridRow extends GridRow
             )
         );
 
-        if (!$element->isRegisterToJournal()) {
+        if ($element instanceof Service && !$element->isRegisterToJournal()) {
 
             $this->addAction(
                 new LinkAction(

@@ -59,6 +59,9 @@ class PreprintToJournalPlugin extends GenericPlugin
             return $success;
         }
 
+        $this->setupServiceSettingsComponents();
+        $this->setupJournalServiceListComponent();
+
         if (self::isOJS()) {
             $this->setupJournalSubmissionHandler();
             return $success;
@@ -68,9 +71,6 @@ class PreprintToJournalPlugin extends GenericPlugin
         $this->setupJournalPublicationTab();
         $this->setupJournalPublishingHandler();
         $this->addJournalPubslishingComponent();
-
-        $this->setupServiceSettingsComponents();
-        $this->setupJournalServiceListComponent();
 
         return $success;
     }
@@ -141,7 +141,11 @@ class PreprintToJournalPlugin extends GenericPlugin
             
             return new JSONMessage(
                 true, 
-                $templateManager->fetch($this->getTemplateResource('settings.tpl'))
+                $templateManager->fetch(
+                    $this->getTemplateResource(
+                        static::isOJS() ? 'services/list.tpl' : 'settings.tpl'
+                    )
+                )
             );
         }
 

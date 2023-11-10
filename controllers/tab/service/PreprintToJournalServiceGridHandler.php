@@ -2,6 +2,7 @@
 
 namespace APP\plugins\generic\preprintToJournal\controllers\tab\service;
 
+use APP\plugins\generic\preprintToJournal\classes\models\RemoteService;
 use APP\plugins\generic\preprintToJournal\classes\models\Service;
 use PKP\security\Role;
 use PKP\controllers\grid\GridColumn;
@@ -124,6 +125,12 @@ class PreprintToJournalServiceGridHandler extends GridHandler
      */
     protected function loadData($request, $filter = null)
     {
+        if (static::$plugin::isOJS()) {
+            return RemoteService::all()
+                ->mapWithKeys(fn (RemoteService $service) => [$service->id => $service])
+                ->all();
+        }
+
         return Service::all()
             ->mapWithKeys(fn (Service $service) => [$service->id => $service])
             ->all();

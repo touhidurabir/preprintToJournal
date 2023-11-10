@@ -2,6 +2,7 @@
 
 namespace APP\plugins\generic\preprintToJournal\controllers\tab\service;
 
+use APP\plugins\generic\preprintToJournal\classes\models\RemoteService;
 use APP\plugins\generic\preprintToJournal\classes\models\Service;
 use PKP\controllers\grid\GridColumn;
 use PKP\controllers\grid\GridCellProvider;
@@ -22,7 +23,7 @@ class PreprintToJournalServiceGridCellProvider extends GridCellProvider
         $element = $row->getData();
         $columnId = $column->getId();
 
-        assert($element instanceof Service && !empty($columnId));
+        assert(($element instanceof Service || $element instanceof RemoteService) && !empty($columnId));
 
         return ['label' => match($columnId) {
             'name', 'url', 'ip' => $element->{$columnId},
