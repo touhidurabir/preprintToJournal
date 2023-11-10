@@ -10,9 +10,9 @@ class Service extends Model
 {
     use SoftDeletes;
 
-    public const STATUS_UNAUTHORIZED = 1;
+    public const STATUS_PENDING = 1;
     public const STATUS_AUTHORIZED = 2;
-    public const STATUS_REJECTED = 3;
+    public const STATUS_UNAUTHORIZED = 3;
 
     /**
      * Model's primary key
@@ -44,9 +44,9 @@ class Service extends Model
     public function getStatusResponse(): string
     {
         return match($this->status) {
-            static::STATUS_UNAUTHORIZED => 'plugins.generic.preprintToJournal.service.status.response.pending',
+            static::STATUS_PENDING => 'plugins.generic.preprintToJournal.service.status.response.pending',
             static::STATUS_AUTHORIZED   => 'plugins.generic.preprintToJournal.service.status.response.authorized',
-            static::STATUS_REJECTED     => 'plugins.generic.preprintToJournal.service.status.response.rejected',
+            static::STATUS_UNAUTHORIZED     => 'plugins.generic.preprintToJournal.service.status.response.rejected',
         };
     }
 

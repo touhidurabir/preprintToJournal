@@ -2,10 +2,10 @@
 
 namespace APP\plugins\generic\preprintToJournal\controllers\tab\service;
 
-use APP\plugins\generic\preprintToJournal\classes\models\RemoteService;
-use APP\plugins\generic\preprintToJournal\classes\models\Service;
 use PKP\controllers\grid\GridColumn;
 use PKP\controllers\grid\GridCellProvider;
+use APP\plugins\generic\preprintToJournal\classes\models\Service;
+use APP\plugins\generic\preprintToJournal\classes\models\RemoteService;
 
 class PreprintToJournalServiceGridCellProvider extends GridCellProvider
 {

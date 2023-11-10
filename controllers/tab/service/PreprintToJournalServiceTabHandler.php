@@ -3,15 +3,15 @@
 namespace APP\plugins\generic\preprintToJournal\controllers\tab\service;
 
 use APP\handler\Handler;
-use PKP\core\PKPRequest;
-use APP\core\Application;
+use APP\core\Request;
 use PKP\core\JSONMessage;
 use APP\template\TemplateManager;
 use APP\notification\NotificationManager;
+use APP\plugins\generic\preprintToJournal\classes\models\RemoteService;
 use APP\plugins\generic\preprintToJournal\classes\models\Service;
 use APP\plugins\generic\preprintToJournal\PreprintToJournalPlugin;
 use APP\plugins\generic\preprintToJournal\controllers\tab\service\form\ServiceForm;
-use APP\plugins\generic\preprintToJournal\controllers\tab\service\JournalRegistration;
+use APP\plugins\generic\preprintToJournal\controllers\tab\service\ServiceManager;
 
 class PreprintToJournalServiceTabHandler extends Handler
 {
@@ -30,7 +30,7 @@ class PreprintToJournalServiceTabHandler extends Handler
         );
     }
 
-    public function create(array $args, PKPRequest $request): JSONMessage
+    public function create(array $args, Request $request): JSONMessage
     {
         $serviceFrom = new ServiceForm(static::$plugin);
         $serviceFrom->initData();
@@ -38,7 +38,7 @@ class PreprintToJournalServiceTabHandler extends Handler
         return new JSONMessage(true, $serviceFrom->fetch($request));
     }
 
-    public function store(array $args, PKPRequest $request): JSONMessage
+    public function store(array $args, Request $request): JSONMessage
     {
         $serviceFrom = new ServiceForm(static::$plugin);
         $serviceFrom->readInputData();
@@ -56,7 +56,7 @@ class PreprintToJournalServiceTabHandler extends Handler
         return new JSONMessage(false);
     }
 
-    public function edit(array $args, PKPRequest $request): JSONMessage
+    public function edit(array $args, Request $request): JSONMessage
     {
         $serviceFrom = new ServiceForm(static::$plugin, Service::find($request->getUserVar('id')));
         $serviceFrom->initData();
@@ -64,7 +64,7 @@ class PreprintToJournalServiceTabHandler extends Handler
         return new JSONMessage(true, $serviceFrom->fetch($request));
     }
 
-    public function update(array $args, PKPRequest $request): JSONMessage
+    public function update(array $args, Request $request): JSONMessage
     {   
         $service = Service::find((int) $args['serviceId']);
         $serviceFrom = new ServiceForm(static::$plugin, $service);
@@ -82,7 +82,7 @@ class PreprintToJournalServiceTabHandler extends Handler
         return new JSONMessage(false);
     }
 
-    public function delete(array $args, PKPRequest $request): JSONMessage
+    public function delete(array $args, Request $request): JSONMessage
     {
         if ($args['id']) {
             Service::find($args['id'])->delete();
@@ -96,7 +96,7 @@ class PreprintToJournalServiceTabHandler extends Handler
         return new JSONMessage(false);
     }
 
-    public function register(array $args, PKPRequest $request): JSONMessage
+    public function register(array $args, Request $request): JSONMessage
     {
         $service = Service::find($args['id'] ?? null);
 
@@ -104,8 +104,25 @@ class PreprintToJournalServiceTabHandler extends Handler
             return new JSONMessage(false);
         }
 
-        if ((new JournalRegistration)->register($service)) {
-            
+        if ((new ServiceManager)->register($service)) {
+            $notificationMgr = new NotificationManager();
+            $notificationMgr->createTrivialNotification($request->getUser()->getId());
+
+            return \PKP\db\DAO::getDataChangedEvent($args['id']);
+        }
+
+        return new JSONMessage(false);
+    }
+
+    public function respond(array $args, Request $request): JSONMessage
+    {
+        $remoteService = RemoteService::find($args['id'] ?? null);
+
+        if (!$remoteService) {
+            return new JSONMessage(false);
+        }
+
+        if ((new ServiceManager)->respond($remoteService, $args['responseStatus'])) {
             $notificationMgr = new NotificationManager();
             $notificationMgr->createTrivialNotification($request->getUser()->getId());
 

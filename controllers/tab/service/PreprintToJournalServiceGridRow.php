@@ -4,20 +4,17 @@ namespace APP\plugins\generic\preprintToJournal\controllers\tab\service;
 
 use APP\core\Services;
 use APP\core\Application;
-use APP\plugins\generic\preprintToJournal\classes\models\RemoteService;
-use PKP\core\PKPApplication;
 use PKP\linkAction\LinkAction;
 use PKP\controllers\grid\GridRow;
 use PKP\linkAction\request\AjaxModal;
 use PKP\linkAction\request\RedirectAction;
 use PKP\linkAction\request\RemoteActionConfirmationModal;
 use APP\plugins\generic\preprintToJournal\classes\models\Service;
+use APP\plugins\generic\preprintToJournal\PreprintToJournalPlugin;
+use APP\plugins\generic\preprintToJournal\classes\models\RemoteService;
 
 class PreprintToJournalServiceGridRow extends GridRow
 {
-    //
-    // Overridden methods from GridRow
-    //
     /**
      * @copydoc GridRow::initialize()
      *
@@ -36,6 +33,61 @@ class PreprintToJournalServiceGridRow extends GridRow
 
         $contextService = Services::get('context'); /** @var \APP\services\ContextService $contextService */
         $context = $contextService->get((int)$element->context_id) ?? $request->getContext();
+
+        if (PreprintToJournalPlugin::isOJS()) {
+
+            $this->addAction(
+                new LinkAction(
+                    'authorize',
+                    new RemoteActionConfirmationModal(
+                        $request->getSession(),
+                        __(
+                            'plugins.generic.preprintToJournal.service.authorize.confirm', 
+                            ['ServiceName' => $element->name]
+                        ),
+                        null,
+                        $request->getDispatcher()->url(
+                            $request,
+                            Application::ROUTE_COMPONENT,
+                            $context->getData('urlPath'),
+                            'plugins.generic.preprintToJournal.controllers.tab.service.PreprintToJournalServiceTabHandler',
+                            'respond',
+                            null,
+                            ['id' => $rowId, 'statusResponse' => RemoteService::STATUS_AUTHORIZED]
+                        )
+                    ),
+                    __('plugins.generic.preprintToJournal.service.action.authorize'),
+                    'authorize'
+                )
+            );
+
+            $this->addAction(
+                new LinkAction(
+                    'unauthorize',
+                    new RemoteActionConfirmationModal(
+                        $request->getSession(),
+                        __(
+                            'plugins.generic.preprintToJournal.service.unauthorize.confirm', 
+                            ['ServiceName' => $element->name]
+                        ),
+                        null,
+                        $request->getDispatcher()->url(
+                            $request,
+                            Application::ROUTE_COMPONENT,
+                            $context->getData('urlPath'),
+                            'plugins.generic.preprintToJournal.controllers.tab.service.PreprintToJournalServiceTabHandler',
+                            'respond',
+                            null,
+                            ['id' => $rowId, 'statusResponse' => RemoteService::STATUS_UNAUTHORIZED]
+                        )
+                    ),
+                    __('plugins.generic.preprintToJournal.service.action.unauthorize'),
+                    'unauthorize'
+                )
+            );
+
+            return;
+        }
 
         $this->addAction(
             new LinkAction(

@@ -101,6 +101,12 @@ msgstr "Are you sure you want to delele the service {$ServiceName}?"
 msgid "plugins.generic.preprintToJournal.service.register.confirm"
 msgstr "Are you sure you want to run the registration process for the service {$ServiceName} again?"
 
+msgid "plugins.generic.preprintToJournal.service.authorize.confirm"
+msgstr "Are you sure you want to authorize the service {$ServiceName}?"
+
+msgid "plugins.generic.preprintToJournal.service.unauthorize.confirm"
+msgstr "Are you sure you want to unauthorize the service {$ServiceName}?"
+
 msgid "plugins.generic.preprintToJournal.service.list.title"
 msgstr "White listed journal services"
 
@@ -131,5 +137,5 @@ msgstr "Register"
 msgid "plugins.generic.preprintToJournal.service.action.authorize"
 msgstr "Authorize"
 
-msgid "plugins.generic.preprintToJournal.service.action.reject"
+msgid "plugins.generic.preprintToJournal.service.action.unauthorize"
 msgstr "Reject"

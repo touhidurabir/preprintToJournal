@@ -118,7 +118,7 @@ class ServiceForm extends Form
         $this->service
             ? $this->service->update($data) 
             : Service::create(array_merge($data, [
-                'status'        => Service::STATUS_UNAUTHORIZED,
+                'status'        => Service::STATUS_PENDING,
                 'creator_id'    => Application::get()->getRequest()->getUser()->getId(),
             ]));
 

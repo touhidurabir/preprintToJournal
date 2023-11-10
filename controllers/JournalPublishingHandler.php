@@ -2,14 +2,18 @@
 
 namespace APP\plugins\generic\preprintToJournal\controllers;
 
+use Throwable;
+use APP\core\Request;
+use PKP\facades\Locale;
 use APP\handler\Handler;
-use PKP\core\PKPRequest;
 use APP\core\Application;
 use Illuminate\Support\Str;
+use Illuminate\Http\Response;
+use Illuminate\Http\JsonResponse;
 use PKP\security\authorization\UserRequiredPolicy;
+use APP\plugins\generic\preprintToJournal\classes\models\Service;
+use APP\plugins\generic\preprintToJournal\controllers\tab\service\ServiceManager;
 use APP\plugins\generic\preprintToJournal\PreprintToJournalPlugin;
-use PKP\facades\Locale;
-use Throwable;
 
 class JournalPublishingHandler extends Handler
 {
@@ -28,7 +32,7 @@ class JournalPublishingHandler extends Handler
         return parent::authorize($request, $args, $roleAssignments);
     }
 
-    public function verify(array $args, PKPRequest $request)
+    public function verify(array $args, Request $request)
     {
         // we need to apply some validation here
         $data = $request->getUserVars();
@@ -73,6 +77,24 @@ class JournalPublishingHandler extends Handler
             
             // dump($exception);
         }
+    }
+
+    public function registerRemoteJournalServiceResponse(array $args, Request $request): JsonResponse
+    {
+        $service = Service::find($request->getUserVar('service_id'));
+
+        if (!$service) {
+            return response()->json([
+                'message' => 'Service resource not found',
+            ], Response::HTTP_NOT_FOUND);
+        }
+
+        (new ServiceManager)
+            ->registerRemoteResponse($service, $request->getUserVar('statusResponse'));
+        
+        return response()->json([
+            'message'      => 'Remote journal service response store successfully',
+        ], Response::HTTP_OK)->send();
     }
 }
 

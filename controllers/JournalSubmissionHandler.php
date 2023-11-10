@@ -125,11 +125,13 @@ class JournalSubmissionHandler extends Handler
             ], Response::HTTP_NOT_FOUND)->send();
         }
 
-        $remoteService = RemoteService::create([
+        RemoteService::create([
+            'context_id'        => $context->getId(),
             'remote_service_id' => $request->getUserVar('remote_service_id'),
-            'url'   => $request->getUserVar('url'),
-            'ip'    => $request->getUserVar('ip'),
-            'status' => RemoteService::STATUS_UNAUTHORIZED,
+            'name'              => $request->getUserVar('name'),
+            'url'               => $request->getUserVar('url'),
+            'ip'                => $request->getUserVar('ip'),
+            'status'            => RemoteService::STATUS_PENDING,
         ]);
 
         return response()->json([
