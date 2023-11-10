@@ -16,6 +16,7 @@ use PKP\form\validation\FormValidatorCSRF;
 use PKP\form\validation\FormValidatorPost;
 use APP\plugins\generic\preprintToJournal\classes\models\Service;
 use APP\plugins\generic\preprintToJournal\PreprintToJournalPlugin;
+use APP\plugins\generic\preprintToJournal\controllers\tab\service\ServiceManager;
 
 class ServiceForm extends Form
 {
@@ -115,12 +116,16 @@ class ServiceForm extends Form
             'ip'            => $this->getData('ip') ?? gethostbyname(parse_url($this->getData('url'), PHP_URL_HOST)),
         ];
 
-        $this->service
-            ? $this->service->update($data) 
-            : Service::create(array_merge($data, [
+        if ($this->service) {
+            $this->service->update($data);
+        } else {
+            $service = Service::create(array_merge($data, [
                 'status'        => Service::STATUS_PENDING,
                 'creator_id'    => Application::get()->getRequest()->getUser()->getId(),
             ]));
+
+            (new ServiceManager)->register($service);
+        }
 
         $notificationMgr = new NotificationManager();
         $notificationMgr->createTrivialNotification(

@@ -72,7 +72,7 @@ class ServiceManager
 
         } catch(Throwable $exception) {
             
-            ray($exception);
+            // ray($exception);
         }
 
         return false;
@@ -132,7 +132,7 @@ class ServiceManager
 
         } catch(Throwable $exception) {
 
-            ray($exception);
+            // ray($exception);
         }
 
         return false;
