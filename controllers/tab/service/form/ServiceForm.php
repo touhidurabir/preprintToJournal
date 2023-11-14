@@ -5,7 +5,6 @@ namespace APP\plugins\generic\preprintToJournal\controllers\tab\service\form;
 use PKP\form\Form;
 use APP\core\Services;
 use PKP\context\Context;
-use PKP\core\PKPRequest;
 use APP\core\Application;
 use APP\template\TemplateManager;
 use APP\notification\Notification;
