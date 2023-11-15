@@ -1,16 +1,36 @@
-<script>
-	$(function() {ldelim}
-		$('#preprintToJournalServiceForm').pkpHandler('$.pkp.controllers.form.AjaxFormHandler');
+<script type="text/javascript">
+
+	$(document).ready(function(){ldelim}
+
+		let formElement = $("form#" + '{$formId}')
+
+		$(function() {ldelim}
+			formElement.pkpHandler('$.pkp.controllers.form.AjaxFormHandler');
+		{rdelim});
+
+		{if $op !== 'store'}
+
+			formElement.submit(function(event){ldelim}
+				event.preventDefault();
+				let data = {};
+				$.each(formElement.serializeArray(), (index, item) => data[item.name] = item.value)
+				$.ajax({
+					type: formElement.attr('method'),
+					url: formElement.attr('action'),
+					data: data,
+					dataType: "json",
+					encode: true,
+				}).done(function (data) {
+					// console.log(data);
+				});
+			{rdelim});
+		{/if}
 	{rdelim});
 </script>
 
-{* <h3>
-    {translate key="plugins.generic.preprintToJournal.service.from.heading"}
-</h3> *}
-
 <form
 	class="pkp_form"
-	id="preprintToJournalServiceForm"
+	id='{$formId}'
 	method="POST"
 	action="{url    router=\PKP\core\PKPApplication::ROUTE_COMPONENT 
                     component="plugins.generic.preprintToJournal.controllers.tab.service.PreprintToJournalServiceTabHandler" 
@@ -23,10 +43,12 @@
 >
 	{csrf}
 
-	{include 
-		file="controllers/notification/inPlaceNotification.tpl" 
-		notificationId="preprintToJournalServiceFormNotification"
-	}
+	{if $op === 'store'}
+		{include 
+			file="controllers/notification/inPlaceNotification.tpl" 
+			notificationId="preprintToJournalServiceFormNotification"
+		}
+	{/if}
 
 	{if !isset($serviceId)}
 		{fbvFormSection}

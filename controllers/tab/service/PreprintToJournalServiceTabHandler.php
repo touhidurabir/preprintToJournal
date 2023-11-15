@@ -75,6 +75,7 @@ class PreprintToJournalServiceTabHandler extends Handler
             $serviceFrom->execute();
             $notificationMgr = new NotificationManager();
             $notificationMgr->createTrivialNotification($request->getUser()->getId());
+            $serviceFrom->reset();
 
             return \PKP\db\DAO::getDataChangedEvent($service->id);
         }

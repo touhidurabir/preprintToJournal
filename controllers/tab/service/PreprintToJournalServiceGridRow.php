@@ -12,6 +12,7 @@ use PKP\linkAction\request\RemoteActionConfirmationModal;
 use APP\plugins\generic\preprintToJournal\classes\models\Service;
 use APP\plugins\generic\preprintToJournal\PreprintToJournalPlugin;
 use APP\plugins\generic\preprintToJournal\classes\models\RemoteService;
+use APP\plugins\generic\preprintToJournal\controllers\tab\service\form\ServiceForm;
 
 class PreprintToJournalServiceGridRow extends GridRow
 {
@@ -109,10 +110,9 @@ class PreprintToJournalServiceGridRow extends GridRow
                     __('grid.action.edit'),
                     'modal_edit',
                     true,
-                    'preprintToJournalServiceForm'
+                    ServiceForm::FORM_ID_UPDATE
                 ),
-                __('grid.action.edit'),
-                'edit'
+                __('grid.action.edit')
             )
         );
         

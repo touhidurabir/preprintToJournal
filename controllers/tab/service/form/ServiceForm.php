@@ -24,6 +24,9 @@ class ServiceForm extends Form
     protected ?Service $service = null;
 
     protected Context $context;
+
+    public const FORM_ID_STORE = 'preprintToJournalServiceFormStore';
+    public const FORM_ID_UPDATE = 'preprintToJournalServiceFormUpdate';
     
     /**
      * Create a new instance of service form
@@ -75,6 +78,8 @@ class ServiceForm extends Form
             ];
         }
 
+        $this->setFromId();
+
         parent::initData();
     }
 
@@ -112,7 +117,7 @@ class ServiceForm extends Form
             'name'          => $this->getData('name'),
             'description'   => $this->getData('description'),
             'url'           => $this->getData('url'),
-            'ip'            => $this->getData('ip') ?? gethostbyname(parse_url($this->getData('url'), PHP_URL_HOST)),
+            'ip'            => empty($this->getData('ip')) ? gethostbyname(parse_url($this->getData('url'), PHP_URL_HOST)) : $this->getData('ip'),
         ];
 
         if ($this->service) {
@@ -142,5 +147,22 @@ class ServiceForm extends Form
     public function reset(): void
     {
         $this->_data = [];
+        $this->setFromId();
+    }
+
+    /**
+     * Set the form ID
+     */
+    public function setFromId(): void
+    {
+        $this->_data['formId'] = $this->getFormId();;
+    }
+
+    /**
+     * Get the form ID
+     */
+    public function getFormId(): string
+    {
+        return $this->service ? static::FORM_ID_UPDATE : static::FORM_ID_STORE;
     }
 }
