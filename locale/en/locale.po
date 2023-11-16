@@ -17,38 +17,11 @@ msgstr "Preprint to Journal Articale submission plugin"
 msgid "plugins.generic.preprintToJournal.description"
 msgstr "This plugin provides the a standeard approach to turn a preprint to journal acticle implementing COAR Notification and LDN protocol."
 
-msgid "plugins.generic.preprintToJournal.user.profile.apiKey"
-msgstr "Preprint to Journal Configs"
-
-msgid "plugins.generic.preprintToJournal.user.profile.apiKey.form.title"
-msgstr "Preprint to Journal Auth Api Key"
-
-msgid "plugins.generic.preprintToJournal.user.profile.apiKey.form.journalPath.title"
-msgstr "Journal Path"
-
-msgid "plugins.generic.preprintToJournal.publishingJournal.url.label"
-msgstr "Publishing OJS Journal Url"
-
-msgid "plugins.generic.preprintToJournal.publishingJournal.url.description"
-msgstr "The full url path of the OJS journal with journal path where this preprint will be posted as article. Example: http://my-journal.com/journal-path"
-
-msgid "plugins.generic.preprintToJournal.publishingJournal.apiKey.label"
-msgstr "Preprint to Journal Publishing API Key"
-
-msgid "plugins.generic.preprintToJournal.publishingJournal.apiKey.description"
-msgstr "Unique API Key for user to authenticate with the remote publishing OJS journal"
-
 msgid "plugins.generic.preprintToJournal.publishingJournal.response.contextMissing"
 msgstr "Requested journal not available for submission."
 
 msgid "plugins.generic.preprintToJournal.publishingJournal.response.contextSubmissionDisable"
 msgstr "New submission disbale for journal named {$journalName}."
-
-msgid "plugins.generic.preprintToJournal.publishingJournal.response.missingApiKey"
-msgstr "Api key missing."
-
-msgid "plugins.generic.preprintToJournal.publishingJournal.response.invalidApiKey"
-msgstr "Given api key is invalid."
 
 msgid "plugins.generic.preprintToJournal.publishingJournal.response.userNotFound"
 msgstr "No user record found for associated api key."
@@ -139,3 +112,9 @@ msgstr "Authorize"
 
 msgid "plugins.generic.preprintToJournal.service.action.unauthorize"
 msgstr "Reject"
+
+msgid "plugins.generic.preprintToJournal.publishingJournal.service.select.label"
+msgstr "Publishing OJS Journal Service"
+
+msgid "plugins.generic.preprintToJournal.publishingJournal.service.select.description"
+msgstr "Select one of the authorized journal services to publish the preprint to journal articel."

@@ -16,7 +16,7 @@ class ServiceManager
 {
     public function register(Service $service): bool
     {
-        if ($service->isRegisterToJournal()) {
+        if ($service->hasRegistered()) {
             return response()->json([
                 'message' => 'Service Already Registered',
             ], Response::HTTP_OK);

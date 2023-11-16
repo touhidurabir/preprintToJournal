@@ -1,4 +1,4 @@
-pkp.Vue.component('preprint-to-journal', {
+pkp.registry.registerComponent('preprint-to-journal', {
 	name: 'PreprintToJournal',
     props: {
         formJournalPublication: Object
@@ -29,9 +29,7 @@ pkp.Vue.component('preprint-to-journal', {
     },
     onSuccess: function(response) {
         this.showFormJournalPublication = false;
-        
-        // this.textToShow = `Data from first form - url: ${data.publishingJournalUrl}, key:${data.apiKey}`
-        this.textToShow = `Response from API : ${response.data.message} with return http status code : ${response.status}`;
+        this.textToShow = `Response : ${response.message}`;
     },
   }
 });

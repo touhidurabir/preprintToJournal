@@ -7,24 +7,7 @@
 		$(function() {ldelim}
 			formElement.pkpHandler('$.pkp.controllers.form.AjaxFormHandler');
 		{rdelim});
-
-		{if $op !== 'store'}
-
-			formElement.submit(function(event){ldelim}
-				event.preventDefault();
-				let data = {};
-				$.each(formElement.serializeArray(), (index, item) => data[item.name] = item.value)
-				$.ajax({
-					type: formElement.attr('method'),
-					url: formElement.attr('action'),
-					data: data,
-					dataType: "json",
-					encode: true,
-				}).done(function (data) {
-					// console.log(data);
-				});
-			{rdelim});
-		{/if}
+		
 	{rdelim});
 </script>
 

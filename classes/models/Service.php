@@ -53,9 +53,14 @@ class Service extends Model
     /**
      * Get the table associated with the model.
      */
-    public function isRegisterToJournal(): bool
+    public function hasRegistered(): bool
     {
         return $this->registered_at ? true: false;
+    }
+
+    public function hasAuthorized(): bool
+    {
+        return $this->status === static::STATUS_AUTHORIZED;
     }
 
 }

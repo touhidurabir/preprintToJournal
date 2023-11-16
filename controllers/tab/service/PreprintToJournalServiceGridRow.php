@@ -141,7 +141,7 @@ class PreprintToJournalServiceGridRow extends GridRow
             )
         );
 
-        if ($element instanceof Service && !$element->isRegisterToJournal()) {
+        if ($element instanceof Service && !$element->hasRegistered()) {
 
             $this->addAction(
                 new LinkAction(

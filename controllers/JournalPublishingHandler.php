@@ -4,6 +4,7 @@ namespace APP\plugins\generic\preprintToJournal\controllers;
 
 use Throwable;
 use APP\core\Request;
+use APP\core\Services;
 use PKP\facades\Locale;
 use APP\handler\Handler;
 use APP\core\Application;
@@ -12,8 +13,8 @@ use Illuminate\Http\Response;
 use Illuminate\Http\JsonResponse;
 use PKP\security\authorization\UserRequiredPolicy;
 use APP\plugins\generic\preprintToJournal\classes\models\Service;
-use APP\plugins\generic\preprintToJournal\controllers\tab\service\ServiceManager;
 use APP\plugins\generic\preprintToJournal\PreprintToJournalPlugin;
+use APP\plugins\generic\preprintToJournal\controllers\tab\service\ServiceManager;
 
 class JournalPublishingHandler extends Handler
 {
@@ -34,11 +35,24 @@ class JournalPublishingHandler extends Handler
 
     public function verify(array $args, Request $request)
     {
-        // we need to apply some validation here
-        $data = $request->getUserVars();
-        $journalPath = Str::of($data['publishingJournalUrl'])->explode('/')->filter()->last();
-        $journalBaseUrl = Str::of($data['publishingJournalUrl'])->replace("/{$journalPath}", '')->__toString();
+        $service = Service::find($request->getUserVar('publishingJournalServiceId'));
+        
+        if (!$service) {
+            return response()->json([
+                'message' => 'Remote journal service not found',
+            ], Response::HTTP_NOT_FOUND);
+        }
 
+        if (!$service->hasAuthorized()) {
+            return response()->json([
+                'message' => 'Remote journal has not authorized yet',
+            ], Response::HTTP_NOT_ACCEPTABLE);
+        }
+
+        $contextService = Services::get('context'); /** @var \APP\services\ContextService $contextService */
+        $context = $contextService->get((int)$service->context_id); /** @var \App\server\Server $context */
+
+        $journalPath = last(explode('/', $service->url));
         $journalVerifyUrl = Str::of(
             $request->getDispatcher()->url(
                 $request,
@@ -47,13 +61,9 @@ class JournalPublishingHandler extends Handler
                 'plugins.generic.preprintToJournal.controllers.JournalSubmissionHandler',
                 'verify',
             )
-        )->replace($request->getBaseUrl(), $journalBaseUrl)->__toString();
+        )->replace($request->getBaseUrl() . '/index.php/' . $context->getData('urlPath') , $service->url)->__toString();
 
         $httpClient = Application::get()->getHttpClient();
-        $header = [
-            'Accept'    => 'application/json',
-            'X-Api-Key' => $data['apiKey'],
-        ];
 
         try {
             $response = $httpClient->request(
@@ -61,22 +71,33 @@ class JournalPublishingHandler extends Handler
                 $journalVerifyUrl,
                 [
                     'http_errors'   => false,
-                    'headers'       => $header,
+                    'headers'       => [
+                        'Accept'    => 'application/json'
+                    ],
                     'form_params'   => [
                         'preferredLocale' => Locale::getLocale()
                     ],
                 ]
             );
 
-            return response()->json([
-                'data'      => json_decode($response->getBody(), true),
-                'status'    => $response->getStatusCode(),
-            ], 200)->send();
-
         } catch(Throwable $exception) {
             
-            // dump($exception);
+            ray($exception);
         }
+
+        if ($response && $response->getStatusCode() === Response::HTTP_OK) {
+            
+            return response()->json([
+                'message' => 'Verified successfully',
+                'data'      => [
+                    'service_id' => $service->id,
+                ],
+            ], Response::HTTP_OK)->send();
+        }
+
+        return response()->json([
+            'message' => 'Verified successfully', 
+        ], Response::HTTP_NOT_ACCEPTABLE)->send();
     }
 
     public function registerRemoteJournalServiceResponse(array $args, Request $request): JsonResponse
