@@ -82,7 +82,7 @@ class JournalPublishingHandler extends Handler
 
         } catch(Throwable $exception) {
             
-            ray($exception);
+            // dump($exception);
         }
 
         if ($response && $response->getStatusCode() === Response::HTTP_OK) {
