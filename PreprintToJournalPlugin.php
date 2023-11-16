@@ -15,7 +15,7 @@ use PKP\components\forms\FormComponent;
 use APP\plugins\generic\preprintToJournal\PreprintToJournalSchemaMigration;
 use APP\plugins\generic\preprintToJournal\controllers\JournalPublishingHandler;
 use APP\plugins\generic\preprintToJournal\controllers\JournalSubmissionHandler;
-use APP\plugins\generic\preprintToJournal\classes\components\JournalPublicationForm;
+use APP\plugins\generic\preprintToJournal\classes\components\JournalSelectionForm;
 use APP\plugins\generic\preprintToJournal\controllers\tab\user\CustomApiProfileTabHandler;
 use APP\plugins\generic\preprintToJournal\controllers\tab\service\PreprintToJournalServiceTabHandler;
 use APP\plugins\generic\preprintToJournal\controllers\tab\service\PreprintToJournalServiceGridHandler;
@@ -245,7 +245,7 @@ class PreprintToJournalPlugin extends GenericPlugin
                 'verify',
             );
 
-            $journalPublicationForm = new JournalPublicationForm(
+            $journalSelectionForm = new JournalSelectionForm(
                 action: $action, 
                 // action: FormComponent::ACTION_EMIT,
                 publication: $publication, 
@@ -253,17 +253,17 @@ class PreprintToJournalPlugin extends GenericPlugin
                 locales: $locales
             );
 
-            import('plugins.generic.preprintToJournal.classes.components.JournalPublicationForm'); // Constant import
+            import('plugins.generic.preprintToJournal.classes.components.JournalSelectionForm'); // Constant import
 
             $templateMgr->setConstants([
-                'FORM_JOURNAL_PUBLICATION' => FORM_JOURNAL_PUBLICATION,
+                'FORM_JOURNAL_SELECTION' => FORM_JOURNAL_SELECTION,
             ]);
 
             $components = $templateMgr->getState('components');
-            $components[FORM_JOURNAL_PUBLICATION] = $journalPublicationForm->getConfig();
+            $components[FORM_JOURNAL_SELECTION] = $journalSelectionForm->getConfig();
 
             // $publicationFormIds = $templateMgr->getState('publicationFormIds');
-            // $publicationFormIds[] = FORM_JOURNAL_PUBLICATION;
+            // $publicationFormIds[] = FORM_JOURNAL_SELECTION;
 
             $templateMgr->setState([
                 'components' => $components,
@@ -292,7 +292,7 @@ class PreprintToJournalPlugin extends GenericPlugin
 
             // Had to set it here as it's getting replaced for resone, weird. need to check it back
             $templateMgr->assign([
-                'journalPublishingUrl' => $templateMgr->getState('components')['journalPublication']['action']
+                'journalPublishingUrl' => $templateMgr->getState('components')['journalSelection']['action']
             ]);
 
             $output .= $templateMgr->fetch($this->getTemplateResource('journalPublicationTab.tpl'));
