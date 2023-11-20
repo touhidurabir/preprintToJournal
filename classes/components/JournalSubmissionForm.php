@@ -6,6 +6,7 @@ use APP\facades\Repo;
 use PKP\context\Context;
 use APP\publication\Publication;
 use PKP\components\forms\FieldSelect;
+use PKP\components\forms\FieldOptions;
 use PKP\components\forms\FieldRichText;
 use PKP\components\forms\FormComponent;
 use PKP\components\forms\FieldRichTextarea;
@@ -35,21 +36,11 @@ class JournalSubmissionForm extends FormComponent
 
         $primaryLocale ??= $context->getPrimaryLocale();
 
-        $this
-            ->addField(new FieldRichText('title', [
-                'label' => __('common.title'),
-                'size' => 'oneline',
-                'isRequired' => true,
-                'value' => $publication->getData('title', $primaryLocale),
-            ]))
-            ->addField(new FieldRichTextarea('abstract', [
-                'label' => __('common.abstract'),
-                'isMultilingual' => false,
-                'isRequired' => true,
-                'size' => 'large',
-                'wordLimit' => 1000,
-                'value' => $publication->getData('abstract', $primaryLocale) ?? '',
-            ]));
+        $this->addJournalLocaleOptions();
+        $this->addJournalSectionOptions();
+        $this->addJournalChecklistOptions();
+        $this->addJournalPrivacyConcentOptions();
+        $this->addPreprintConfigs($publication, $primaryLocale);
     }
 
     /**
@@ -79,27 +70,90 @@ class JournalSubmissionForm extends FormComponent
 
     protected function addJournalLocaleOptions(): void
     {
+        $locales = $this->journalConfigurations['locales'] ?? [];
 
+        if (count($locales) <= 0) {
+            return;
+        }
+
+        $this->addField(new FieldOptions('journalLocale', [
+            'label' => __('submission.submit.submissionLocale'),
+            'description' => __('submission.submit.submissionLocaleDescription'),
+            'type' => 'radio',
+            'options' => $locales,
+            'value' => '',
+            'isRequired' => true,
+        ]));
     }
 
     protected function addJournalSectionOptions(): void
     {
-        
+        $sections = $this->journalConfigurations['sections'] ?? [];
+
+        if (count($sections) <= 0) {
+            return;
+        }
+
+        $this->addField(new FieldOptions('journalSectionId', [
+            'type' => 'radio',
+            'label' => 'Journal Section',
+            'description' => 'Submissions must be made to one of the journal\'s sections.',
+            'options' => $sections,
+            'value' => '',
+            'isRequired' => true,
+        ]));
     }
 
     protected function addJournalChecklistOptions(): void
     {
-        
+        $submissionChecklists = $this->journalConfigurations['submissionChecklists'] ?? [];
+
+        if (count($submissionChecklists) <= 0) {
+            return;
+        }
+
+        $this->addField(new FieldOptions('journalSubmissionRequirements', [
+            'label' => $submissionChecklists['label'],
+            'description' => $submissionChecklists['description'],
+            'options' => $submissionChecklists['options'],
+            'value' => false,
+            'isRequired' => true,
+        ]));
     }
 
     protected function addJournalPrivacyConcentOptions(): void
     {
-        
+        $privacyConcents = $this->journalConfigurations['privacyConcents'] ?? [];
+
+        if (count($privacyConcents) <= 0) {
+            return;
+        }
+
+        $this->addField(new FieldOptions('journalPrivacyConsent', [
+            'label' => $privacyConcents['label'],
+            'options' => $privacyConcents['options'],
+            'value' => false,
+            'isRequired' => true,
+        ]));
     }
 
-    protected function addPreprintConfigs(): void
+    protected function addPreprintConfigs(Publication $publication, string $primaryLocale): void
     {
-        
+        $this
+            ->addField(new FieldRichText('preprintTitle', [
+                'label' => __('common.title'),
+                'size' => 'oneline',
+                'isRequired' => true,
+                'value' => $publication->getData('title', $primaryLocale),
+            ]))
+            ->addField(new FieldRichTextarea('preprintAbstract', [
+                'label' => __('common.abstract'),
+                'isMultilingual' => false,
+                'isRequired' => true,
+                'size' => 'large',
+                'wordLimit' => 1000,
+                'value' => $publication->getData('abstract', $primaryLocale) ?? '',
+            ]));
     }
 
 }
