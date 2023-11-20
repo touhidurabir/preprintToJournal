@@ -114,6 +114,7 @@ class JournalPublishingHandler extends Handler
                 action: $action, 
                 publication: $publication, 
                 context: $context,
+                service: $service,
                 locales: $locales,
                 values: json_decode($response->getBody(), true)['data'] ?? [],
             );

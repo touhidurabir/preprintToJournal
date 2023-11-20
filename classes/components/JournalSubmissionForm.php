@@ -27,7 +27,7 @@ class JournalSubmissionForm extends FormComponent
 
     protected array $journalConfigurations;
 
-    public function __construct(string $action, Publication $publication, Context $context, array $locales = [], array $values = [], string $selectedLocale = null)
+    public function __construct(string $action, Publication $publication, Context $context, Service $service, array $locales = [], array $values = [], string $selectedLocale = null)
     {
         $this->action = $action;
         $this->locales = $locales;
@@ -41,6 +41,8 @@ class JournalSubmissionForm extends FormComponent
         $this->addJournalChecklistOptions();
         $this->addJournalPrivacyConcentOptions();
         $this->addPreprintConfigs($publication, $primaryLocale);
+
+        $this->addHiddenField('serviceId', $service->id);
     }
 
     /**
