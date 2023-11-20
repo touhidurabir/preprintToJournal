@@ -118,3 +118,15 @@ msgstr "Publishing OJS Journal Service"
 
 msgid "plugins.generic.preprintToJournal.publishingJournal.service.select.description"
 msgstr "Select one of the authorized journal services to publish the preprint to journal articel."
+
+msgid "plugins.generic.preprintToJournal.publishingJournal.service.select.button.title"
+msgstr "Proceed to Journal Transfer"
+
+msgid "plugins.generic.preprintToJournal.publishingJournal.service.complete.button.title"
+msgstr "Complete Journal Transfer"
+
+msgid "plugins.generic.preprintToJournal.publishingJournal.service.starting.title"
+msgstr "Before you begin"
+
+msgid "plugins.generic.preprintToJournal.publishingJournal.service.starting.description"
+msgstr "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Phasellus quis viverra mauris, sed faucibus massa. Phasellus eu sapien magna. Phasellus mollis auctor dapibus. In et erat lorem. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos."

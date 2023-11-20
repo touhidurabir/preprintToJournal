@@ -4,17 +4,22 @@ namespace APP\plugins\generic\preprintToJournal\controllers;
 
 use Throwable;
 use APP\core\Request;
+use APP\facades\Repo;
+use PKP\plugins\Hook;
 use APP\core\Services;
 use PKP\facades\Locale;
 use APP\handler\Handler;
 use APP\core\Application;
+use APP\plugins\generic\preprintToJournal\classes\components\JournalSubmissionForm;
 use Illuminate\Support\Str;
 use Illuminate\Http\Response;
+use APP\template\TemplateManager;
 use Illuminate\Http\JsonResponse;
 use PKP\security\authorization\UserRequiredPolicy;
 use APP\plugins\generic\preprintToJournal\classes\models\Service;
 use APP\plugins\generic\preprintToJournal\PreprintToJournalPlugin;
 use APP\plugins\generic\preprintToJournal\controllers\tab\service\ServiceManager;
+use APP\submission\Submission;
 
 class JournalPublishingHandler extends Handler
 {
@@ -86,17 +91,45 @@ class JournalPublishingHandler extends Handler
         }
 
         if ($response && $response->getStatusCode() === Response::HTTP_OK) {
-            
+
+            $submission = Repo::submission()->get($request->getUserVar('submissionId')); /** @var \APP\submission\Submission $submission */
+            $publication = $submission->getCurrentPublication(); /** @var \APP\publication\Publication $publication */
+
+            $locales = $context->getSupportedSubmissionLocaleNames();
+            $locales = array_map(
+                fn (string $locale, string $name) => ['key' => $locale, 'label' => $name], 
+                array_keys($locales), 
+                $locales
+            );
+
+            $action = $request->getDispatcher()->url(
+                $request,
+                Application::ROUTE_COMPONENT,
+                $context->getData('urlPath'),
+                'plugins.generic.preprintToJournal.controllers.JournalPublishingHandler',
+                'submitPreprintToJournal',
+            );
+
+            $jounalSubmissionForm = new JournalSubmissionForm(
+                action: $action, 
+                publication: $publication, 
+                context: $context,
+                locales: $locales,
+                values: json_decode($response->getBody(), true)['data'] ?? [],
+            );
+
             return response()->json([
                 'message' => 'Verified successfully',
                 'data'      => [
                     'service_id' => $service->id,
+                    'form_component' => $jounalSubmissionForm->getConfig(),
                 ],
+                'form' => '',
             ], Response::HTTP_OK)->send();
         }
 
         return response()->json([
-            'message' => 'Verified successfully', 
+            'message' => 'Verification failed.', 
         ], Response::HTTP_NOT_ACCEPTABLE)->send();
     }
 
@@ -116,6 +149,11 @@ class JournalPublishingHandler extends Handler
         return response()->json([
             'message'      => 'Remote journal service response store successfully',
         ], Response::HTTP_OK)->send();
+    }
+
+    public function submitPreprintToJournal(array $args, Request $request)
+    {
+
     }
 }
 

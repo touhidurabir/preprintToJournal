@@ -16,7 +16,6 @@ use APP\plugins\generic\preprintToJournal\PreprintToJournalSchemaMigration;
 use APP\plugins\generic\preprintToJournal\controllers\JournalPublishingHandler;
 use APP\plugins\generic\preprintToJournal\controllers\JournalSubmissionHandler;
 use APP\plugins\generic\preprintToJournal\classes\components\JournalSelectionForm;
-use APP\plugins\generic\preprintToJournal\controllers\tab\user\CustomApiProfileTabHandler;
 use APP\plugins\generic\preprintToJournal\controllers\tab\service\PreprintToJournalServiceTabHandler;
 use APP\plugins\generic\preprintToJournal\controllers\tab\service\PreprintToJournalServiceGridHandler;
 
@@ -243,6 +242,8 @@ class PreprintToJournalPlugin extends GenericPlugin
                 $context->getData('urlPath'),
                 'plugins.generic.preprintToJournal.controllers.JournalPublishingHandler',
                 'verify',
+                null,
+                ['submissionId' => $submission->getId()]
             );
 
             $journalSelectionForm = new JournalSelectionForm(

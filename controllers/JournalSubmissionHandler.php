@@ -2,19 +2,16 @@
 
 namespace APP\plugins\generic\preprintToJournal\controllers;
 
-use stdClass;
+use APP\core\Application;
+use APP\handler\Handler;
 use APP\core\Request;
 use APP\facades\Repo;
-use APP\plugins\generic\preprintToJournal\classes\models\RemoteService;
-use Firebase\JWT\Key;
-use PKP\config\Config;
-use PKP\security\Role;
-use PKP\facades\Locale;
-use APP\handler\Handler;
-use PKP\core\PKPJwt as JWT;
-use Illuminate\Http\Response;
-use APP\plugins\generic\preprintToJournal\classes\models\ApiKey;
 use APP\plugins\generic\preprintToJournal\PreprintToJournalPlugin;
+use APP\plugins\generic\preprintToJournal\classes\models\RemoteService;
+use PKP\config\Config;
+use PKP\facades\Locale;
+use PKP\context\Context;
+use Illuminate\Http\Response;
 use Illuminate\Http\JsonResponse;
 
 class JournalSubmissionHandler extends Handler
@@ -37,7 +34,7 @@ class JournalSubmissionHandler extends Handler
         //      - context exists
         //      - journal allow submission
 
-        $context = $request->getContext(); /** @var \APP\journal\Journal $context */
+        $context = $request->getContext(); /** @var \APP\journal\Journal|\PKP\context\Context $context */
         Locale::setLocale($request->getUserVar('preferredLocale') ?? Locale::getPrimaryLocale());
 
         if (!$context) {
@@ -56,6 +53,13 @@ class JournalSubmissionHandler extends Handler
 
         return response()->json([
             'message' => __('plugins.generic.preprintToJournal.publishingJournal.response.success'),
+            'data' => [
+                'locales'               => $this->getLocaleOptions($context),
+                'sections'              => $this->getSectionOptions($context),
+                'submissionChecklists'  => $this->getSubmissionChecklistOptions($context),
+                'privacyConcents'       => $this->getPrivacyConcentOptions($context),
+                'primaryLocale'         => $context->getPrimaryLocale(),
+            ],
         ], Response::HTTP_OK)->send();
 
     }
@@ -83,6 +87,96 @@ class JournalSubmissionHandler extends Handler
             'message' => 'Remote service registered successfully',
         ], Response::HTTP_OK)->send();
     }
+
+    protected function getLocaleOptions(Context $context): array
+    {
+        $options = [];
+
+        foreach ($context->getSupportedSubmissionLocaleNames() as $locale => $name) {
+            $options[] = [
+                'value' => $locale,
+                'label' => $name,
+            ];
+        }
+
+        return $options;
+    }
+
+    protected function getSectionOptions(Context $context): array
+    {
+        $allSections = Repo::section()
+            ->getCollector()
+            ->filterByContextIds([$context->getId()])
+            ->excludeInactive()
+            ->getMany();
+
+        $options = [];
+
+        foreach ($allSections as $section) { /** @var Section $section */
+            if ($section->getEditorRestricted()) {
+                continue;
+            }
+
+            $options[] = [
+                'value' => $section->getId(),
+                'label' => $section->getLocalizedTitle(),
+            ];
+        }
+
+        return $options;
+    }
+
+    protected function getSubmissionChecklistOptions(Context $context): array
+    {
+        return [
+            'label' => __('submission.submit.submissionChecklist'),
+            'description' => $context->getLocalizedData('submissionChecklist'),
+            'options' => [
+                [
+                    'value' => true,
+                    'label' => __('submission.submit.submissionChecklistConfirm'),
+                ],
+            ],
+        ];
+    }
+
+    protected function getPrivacyConcentOptions(Context $context): array
+    {
+        $privacyStatement = Config::getVar('general', 'sitewide_privacy_statement')
+            ? Application::get()
+                ->getRequest()
+                ->getSite()
+                ->getData('privacyStatement')
+            : $context->getData('privacyStatement');
+
+        if (!$privacyStatement) {
+            return [];
+        }
+
+        $privacyUrl = Application::get()
+            ->getRequest()
+            ->getDispatcher()
+            ->url(
+                Application::get()->getRequest(),
+                Application::ROUTE_PAGE,
+                null,
+                'about',
+                'privacy'
+            );
+        
+        return [
+            'label' => __('submission.wizard.privacyConsent'),
+            'options' => [
+                [
+                    'value' => true,
+                    'label' => __('user.register.form.privacyConsent', [
+                        'privacyUrl' => $privacyUrl,
+                    ]),
+                ],
+            ],
+        ];
+    }
+
 }
 
 if (!PKP_STRICT_MODE) {

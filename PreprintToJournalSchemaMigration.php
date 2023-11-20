@@ -78,6 +78,7 @@ class PreprintToJournalSchemaMigration extends Migration
             $table->unsignedBigInteger('id')->autoIncrement();
             $table->bigInteger('context_id');
             $table->bigInteger('submission_id');
+            $table->bigInteger('service_id');
             $table->timestamps();
             $table->softDeletes();
 
@@ -88,9 +89,15 @@ class PreprintToJournalSchemaMigration extends Migration
                 ->onDelete('cascade');
             
             $table
-                ->foreign('submission_id', 'preprint_to_journal_submission_id')
+                ->foreign('submission_id', static::TABLE_PREFIX . 'submission_id')
                 ->references('submission_id')
                 ->on('submissions')
+                ->onDelete('cascade');
+
+            $table
+                ->foreign('service_id', )
+                ->references('id')
+                ->on(static::generateTableName('services'))
                 ->onDelete('cascade');
         });
 
