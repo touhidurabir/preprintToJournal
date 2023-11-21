@@ -50,6 +50,7 @@ class PreprintToJournalSchemaMigration extends Migration
         Schema::create(static::generateTableName('services'), function (Blueprint $table) {
             $table->unsignedBigInteger('id')->autoIncrement();
             $table->bigInteger('context_id');
+            $table->bigInteger('remote_service_id')->nullable();
             $table->string('name', 255);
             $table->text('description')->nullable();
             $table->string('url', 255);
@@ -76,17 +77,12 @@ class PreprintToJournalSchemaMigration extends Migration
 
         Schema::create(static::generateTableName('submissions'), function (Blueprint $table) {
             $table->unsignedBigInteger('id')->autoIncrement();
-            $table->bigInteger('context_id');
+            $table->uuid();
             $table->bigInteger('submission_id');
-            $table->bigInteger('service_id');
+            $table->unsignedBigInteger('service_id');
+            $table->text('payload')->nullable();
             $table->timestamps();
             $table->softDeletes();
-
-            $table
-                ->foreign('context_id')
-                ->references(Application::getContextDAO()->primaryKeyColumn)
-                ->on(Application::getContextDAO()->tableName)
-                ->onDelete('cascade');
             
             $table
                 ->foreign('submission_id', static::TABLE_PREFIX . 'submission_id')

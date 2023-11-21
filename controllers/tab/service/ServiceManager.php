@@ -61,8 +61,11 @@ class ServiceManager
 
             if ($response->getStatusCode() === Response::HTTP_OK) {
 
+                $data = json_decode($response->getBody(), true)['data'];
+
                 $service->update([
-                    'registered_at' => Carbon::now(),
+                    'registered_at'     => Carbon::now(),
+                    'remote_service_id' => $data['service_id'],
                 ]);
                 
                 return true;
