@@ -63,4 +63,9 @@ class Service extends Model
         return $this->status === static::STATUS_AUTHORIZED;
     }
 
+    public function isActive(): bool
+    {
+        return $this->active;
+    }
+
 }

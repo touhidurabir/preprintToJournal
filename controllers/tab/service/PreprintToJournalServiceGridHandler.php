@@ -106,6 +106,19 @@ class PreprintToJournalServiceGridHandler extends GridHandler
                 $serviceGridCellProvider
             )
         );
+
+        if (! PreprintToJournalPlugin::isOJS()) {
+
+            $this->addColumn(
+                new GridColumn(
+                    'active',
+                    'plugins.generic.preprintToJournal.service.list.active',
+                    null,
+                    null,
+                    $serviceGridCellProvider
+                )
+            );
+        }
     }
 
     /**

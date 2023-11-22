@@ -97,6 +97,22 @@ class PreprintToJournalServiceTabHandler extends Handler
         return new JSONMessage(false);
     }
 
+    public function activeStatusUpdate(array $args, Request $request): JSONMessage
+    {
+        if ($args['id']) {
+            Service::find($args['id'])->update([
+                'active' => $args['action'],
+            ]);
+
+            $notificationMgr = new NotificationManager();
+            $notificationMgr->createTrivialNotification($request->getUser()->getId());
+
+            return \PKP\db\DAO::getDataChangedEvent($args['id']);
+        }
+
+        return new JSONMessage(false);
+    }
+
     public function register(array $args, Request $request): JSONMessage
     {
         $service = Service::find($args['id'] ?? null);

@@ -140,6 +140,35 @@ class PreprintToJournalServiceGridRow extends GridRow
                 'delete'
             )
         );
+        
+        $this->addAction(
+            new LinkAction(
+                $element->isActive() ? 'disbale' : 'enable',
+                new RemoteActionConfirmationModal(
+                    $request->getSession(),
+                    __(
+                        $element->isActive() 
+                            ? 'plugins.generic.preprintToJournal.service.disable.confirm'
+                            : 'plugins.generic.preprintToJournal.service.enable.confirm',
+                        ['ServiceName' => $element->name]
+                    ),
+                    null,
+                    $request->getDispatcher()->url(
+                        $request,
+                        Application::ROUTE_COMPONENT,
+                        $context->getData('urlPath'),
+                        'plugins.generic.preprintToJournal.controllers.tab.service.PreprintToJournalServiceTabHandler',
+                        'activeStatusUpdate',
+                        null,
+                        ['id' => $rowId, 'action' => (int)!$element->active]
+                    )
+                ),
+                $element->isActive() 
+                    ? __('plugins.generic.preprintToJournal.service.action.disbale')
+                    : __('plugins.generic.preprintToJournal.service.action.enable'),
+                $element->isActive() ? 'disbale' : 'enable',
+            )
+        );
 
         if ($element instanceof Service && !$element->hasRegistered()) {
 

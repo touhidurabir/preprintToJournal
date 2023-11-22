@@ -74,6 +74,12 @@ msgstr "Are you sure you want to delele the service {$ServiceName}?"
 msgid "plugins.generic.preprintToJournal.service.register.confirm"
 msgstr "Are you sure you want to run the registration process for the service {$ServiceName} again?"
 
+msgid "plugins.generic.preprintToJournal.service.enable.confirm"
+msgstr "Are you sure you want to enable service {$ServiceName} ?"
+
+msgid "plugins.generic.preprintToJournal.service.disable.confirm"
+msgstr "Are you sure you want to disable service {$ServiceName} ?"
+
 msgid "plugins.generic.preprintToJournal.service.authorize.confirm"
 msgstr "Are you sure you want to authorize the service {$ServiceName}?"
 
@@ -95,6 +101,9 @@ msgstr "IP"
 msgid "plugins.generic.preprintToJournal.service.list.status"
 msgstr "Status"
 
+msgid "plugins.generic.preprintToJournal.service.list.active"
+msgstr "Active"
+
 msgid "plugins.generic.preprintToJournal.service.status.response.pending"
 msgstr "Pending Request"
 
@@ -104,8 +113,20 @@ msgstr "Authorized"
 msgid "plugins.generic.preprintToJournal.service.status.response.rejected"
 msgstr "Rejected"
 
+msgid "plugins.generic.preprintToJournal.service.active.yes"
+msgstr "YES"
+
+msgid "plugins.generic.preprintToJournal.service.active.no"
+msgstr "NO"
+
 msgid "plugins.generic.preprintToJournal.service.action.register"
 msgstr "Register"
+
+msgid "plugins.generic.preprintToJournal.service.action.enable"
+msgstr "Enable"
+
+msgid "plugins.generic.preprintToJournal.service.action.disbale"
+msgstr "Disable"
 
 msgid "plugins.generic.preprintToJournal.service.action.authorize"
 msgstr "Authorize"

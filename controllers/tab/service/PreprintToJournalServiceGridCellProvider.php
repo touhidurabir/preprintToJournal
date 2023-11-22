@@ -6,6 +6,7 @@ use PKP\controllers\grid\GridColumn;
 use PKP\controllers\grid\GridCellProvider;
 use APP\plugins\generic\preprintToJournal\classes\models\Service;
 use APP\plugins\generic\preprintToJournal\classes\models\RemoteService;
+use APP\plugins\generic\preprintToJournal\PreprintToJournalPlugin;
 
 class PreprintToJournalServiceGridCellProvider extends GridCellProvider
 {
@@ -28,6 +29,9 @@ class PreprintToJournalServiceGridCellProvider extends GridCellProvider
         return ['label' => match($columnId) {
             'name', 'url', 'ip' => $element->{$columnId},
             'status'            => __($element->getStatusResponse()),
+            'active'            => !PreprintToJournalPlugin::isOJS() && $element->isActive()
+                ? __('plugins.generic.preprintToJournal.service.active.yes')
+                : __('plugins.generic.preprintToJournal.service.active.no'),
         }];
     }
 }

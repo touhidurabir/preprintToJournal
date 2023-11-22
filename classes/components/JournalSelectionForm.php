@@ -30,7 +30,9 @@ class JournalSelectionForm extends FormComponent
         $this->action = $action;
         $this->locales = $locales;
 
-        $services = Service::where('status', Service::STATUS_AUTHORIZED)->get();
+        $services = Service::where('status', Service::STATUS_AUTHORIZED)
+            ->where('active', true)
+            ->get();
 
         $this
             ->addField(new FieldHTML('introduction', [

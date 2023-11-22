@@ -56,6 +56,7 @@ class PreprintToJournalSchemaMigration extends Migration
             $table->string('url', 255);
             $table->string('ip')->nullable();
             $table->integer('status')->unsigned()->default(1);
+            $table->boolean('active')->default(true);
             $table->timestamp('response_at')->nullable();
             $table->timestamp('registered_at')->nullable();
             $table->bigInteger('creator_id')->nullable();
@@ -78,8 +79,9 @@ class PreprintToJournalSchemaMigration extends Migration
         Schema::create(static::generateTableName('submissions'), function (Blueprint $table) {
             $table->unsignedBigInteger('id')->autoIncrement();
             $table->uuid();
-            $table->bigInteger('submission_id');
             $table->unsignedBigInteger('service_id');
+            $table->bigInteger('submission_id');
+            $table->bigInteger('remote_submission_id')->nullable();
             $table->text('payload')->nullable();
             $table->timestamps();
             $table->softDeletes();
