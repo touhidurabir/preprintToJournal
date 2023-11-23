@@ -91,6 +91,11 @@ class JournalSubmissionHandler extends Handler
         ], Response::HTTP_OK)->send();
     }
 
+    public function confirmJournalTransfer(array $args, Request $request): JsonResponse
+    {
+        
+    }
+
     protected function getLocaleOptions(Context $context): array
     {
         $options = [];

@@ -17,7 +17,7 @@ define('FORM_JOURNAL_SELECTION', 'journalSelection');
 class JournalSelectionForm extends FormComponent
 {
     /** @var string id for the form's group and page configuration */
-    public const GROUP = 'default';
+    public const GROUP = 'preprintToJournalSelection';
 
     /** @copydoc FormComponent::$id */
     public $id = FORM_JOURNAL_SELECTION;

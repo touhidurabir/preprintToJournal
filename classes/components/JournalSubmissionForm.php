@@ -17,7 +17,7 @@ define('FORM_JOURNAL_SUBMISSION', 'journalSubmission');
 class JournalSubmissionForm extends FormComponent
 {
     /** @var string id for the form's group and page configuration */
-    public const GROUP = 'default';
+    public const GROUP = 'preprintToJournalSubmission';
 
     /** @copydoc FormComponent::$id */
     public $id = FORM_JOURNAL_SUBMISSION;
@@ -43,6 +43,7 @@ class JournalSubmissionForm extends FormComponent
         $this->addPreprintConfigs($publication, $primaryLocale);
 
         $this->addHiddenField('serviceId', $service->id);
+        $this->addHiddenField('submissionId', (int)$publication->getData('submissionId'));
     }
 
     /**

@@ -44,6 +44,26 @@ class PreprintToJournalSchemaMigration extends Migration
                     ->onDelete('set null');
             });
 
+            Schema::create(static::generateTableName('submissions'), function (Blueprint $table) {
+                $table->unsignedBigInteger('id')->autoIncrement();
+                $table->unsignedBigInteger('service_id');
+                $table->bigInteger('submission_id');
+                $table->timestamps();
+                $table->softDeletes();
+                
+                $table
+                    ->foreign('submission_id', static::TABLE_PREFIX . 'submission_id')
+                    ->references('submission_id')
+                    ->on('submissions')
+                    ->onDelete('cascade');
+    
+                $table
+                    ->foreign('service_id', )
+                    ->references('id')
+                    ->on(static::generateTableName('remote_services'))
+                    ->onDelete('cascade');
+            });
+
             return;
         }
 
@@ -83,6 +103,7 @@ class PreprintToJournalSchemaMigration extends Migration
             $table->bigInteger('submission_id');
             $table->bigInteger('remote_submission_id')->nullable();
             $table->text('payload')->nullable();
+            $table->timestamp('transfered_at')->nullable();
             $table->timestamps();
             $table->softDeletes();
             

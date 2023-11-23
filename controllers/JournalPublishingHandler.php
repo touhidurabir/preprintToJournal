@@ -17,6 +17,7 @@ use APP\template\TemplateManager;
 use Illuminate\Http\JsonResponse;
 use PKP\security\authorization\UserRequiredPolicy;
 use APP\plugins\generic\preprintToJournal\classes\models\Service;
+use APP\plugins\generic\preprintToJournal\classes\models\Submission as TransferableSubmission;
 use APP\plugins\generic\preprintToJournal\PreprintToJournalPlugin;
 use APP\plugins\generic\preprintToJournal\controllers\tab\service\ServiceManager;
 use APP\submission\Submission;
@@ -152,9 +153,52 @@ class JournalPublishingHandler extends Handler
         ], Response::HTTP_OK)->send();
     }
 
-    public function submitPreprintToJournal(array $args, Request $request)
+    public function submitPreprintToJournal(array $args, Request $request): JsonResponse
     {
+        $data = $request->getUserVars();
 
+        // TODO : first run the validation to check if all details required
+
+        $transferableSubmission = TransferableSubmission::create([
+            'uuid' => Str::uuid(),
+            'submission_id' => $data['submissionId'],
+            'service_id'    => $data['serviceId'],
+            'payload'       => json_encode([
+                'journalLocale'     => $data['journalLocale'],
+                'journalSectionId'  => $data['journalSectionId'],
+                'preprintTitle'     => $data['preprintTitle'],
+                'preprintAbstract'  => $data['preprintAbstract']
+            ]),
+        ]);
+
+        $service = Service::find($data['serviceId']);
+
+        $contextService = Services::get('context'); /** @var \APP\services\ContextService $contextService */
+        $context = $contextService->get((int)$service->context_id); /** @var \App\server\Server $context */
+        
+        $journalPath = last(explode('/', $service->url));
+        $articleConfirmationUrl = Str::of(
+            $request->getDispatcher()->url(
+                $request,
+                Application::ROUTE_COMPONENT,
+                $journalPath,
+                'plugins.generic.preprintToJournal.controllers.JournalSubmissionHandler',
+                'confirmJournalTransfer',
+                null,
+                ['uuid' => $transferableSubmission->uuid, 'serviceId' => $service->id]
+            )
+        )
+        ->replace($request->getBaseUrl() . '/index.php/' . $context->getData('urlPath'), $service->url)
+        ->__toString();
+        
+        ray($articleConfirmationUrl);
+
+        return response()->json([
+            'message'   => 'Transferring of preprint to journal article has been initiated successfully.',
+            'data'      => [
+                'articleConfirmationUrl' => $articleConfirmationUrl,
+            ],
+        ], Response::HTTP_OK)->send();
     }
 }
 

@@ -6,16 +6,21 @@ pkp.registry.registerComponent('preprint-to-journal', {
     template: `
     <div>
         <pkp-form
-            @set="set" 
-            @success="onSuccess"
+            @set="set"
+            @success="onSuccessJournalSelection"
+            @error="onErrorJournalSelection"
             v-if="showFormJournalSelection"
-            v-bind="formJournalSelection"    
+            v-bind="formJournalSelection" 
         />
         <div v-else>
             <pkp-form
                 @set="set" 
-                v-bind="formJournalSubmission"    
+                @success="onSuccessJournalSubmission"
+                @error="onErrorJournalSubmission"
+                v-if="showFormJournalSubmission"
+                v-bind="formJournalSubmission"
             />
+            <span v-else>{{textToShow}}</span>
         </div>
     </div>
   `,
@@ -23,6 +28,7 @@ pkp.registry.registerComponent('preprint-to-journal', {
     return { 
         textToShow: 'Here you can put another form instead',
         showFormJournalSelection: true,
+        showFormJournalSubmission: false,
         formJournalSubmission: null,
     }
   },
@@ -30,12 +36,19 @@ pkp.registry.registerComponent('preprint-to-journal', {
     set: function (key, data) {
         this.$emit('set', key, data)
     },
-    onSuccess: function(response) {
-        // this.textToShow = `Response : ${response.message}`;
-        // console.log(response.data.form_component);
-        
+    onErrorJournalSelection: function(error) {
+        this.textToShow = `Error : ${error.message}`;
+    },
+    onSuccessJournalSelection: function(response) {
         this.formJournalSubmission = response.data.form_component;
         this.showFormJournalSelection = false;
+        this.showFormJournalSubmission = true;
+    },
+    onErrorJournalSubmission: function(error) {
+
+    },
+    onSuccessJournalSubmission: function(response) {
+        console.log(response);
     },
   }
 });

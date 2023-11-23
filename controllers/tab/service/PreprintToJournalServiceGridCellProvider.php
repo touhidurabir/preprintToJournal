@@ -27,9 +27,11 @@ class PreprintToJournalServiceGridCellProvider extends GridCellProvider
         assert(($element instanceof Service || $element instanceof RemoteService) && !empty($columnId));
 
         return ['label' => match($columnId) {
-            'name', 'url', 'ip' => $element->{$columnId},
-            'status'            => __($element->getStatusResponse()),
-            'active'            => !PreprintToJournalPlugin::isOJS() && $element->isActive()
+            'name'      => $element->name,
+            'url'       => $element->url,
+            'ip'        => $element->ip,
+            'status'    => __($element->getStatusResponse()),
+            'active'    => !PreprintToJournalPlugin::isOJS() && $element->isActive()
                 ? __('plugins.generic.preprintToJournal.service.active.yes')
                 : __('plugins.generic.preprintToJournal.service.active.no'),
         }];
