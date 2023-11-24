@@ -20,7 +20,7 @@ pkp.registry.registerComponent('preprint-to-journal', {
                 v-if="showFormJournalSubmission"
                 v-bind="formJournalSubmission"
             />
-            <span v-else>{{textToShow}}</span>
+            <span v-else v-html="textToShow"></span>
         </div>
     </div>
   `,
@@ -45,10 +45,12 @@ pkp.registry.registerComponent('preprint-to-journal', {
         this.showFormJournalSubmission = true;
     },
     onErrorJournalSubmission: function(error) {
-
+        this.showFormJournalSubmission = false;
+        this.textToShow = `Error : ${error.message}`;
     },
     onSuccessJournalSubmission: function(response) {
-        console.log(response);
+        this.showFormJournalSubmission = false;
+        this.textToShow = response.message + " <a href='"+response.data.articleConfirmationUrl+"' target='_blank'>" + response.data.articleConfirmationUrl + "</a>";
     },
   }
 });

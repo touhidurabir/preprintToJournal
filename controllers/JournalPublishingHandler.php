@@ -185,19 +185,35 @@ class JournalPublishingHandler extends Handler
                 'plugins.generic.preprintToJournal.controllers.JournalSubmissionHandler',
                 'confirmJournalTransfer',
                 null,
-                ['uuid' => $transferableSubmission->uuid, 'serviceId' => $service->id]
+                ['uuid' => $transferableSubmission->uuid, 'serviceId' => $service->remote_service_id]
             )
         )
         ->replace($request->getBaseUrl() . '/index.php/' . $context->getData('urlPath'), $service->url)
         ->__toString();
-        
-        ray($articleConfirmationUrl);
 
         return response()->json([
             'message'   => 'Transferring of preprint to journal article has been initiated successfully.',
             'data'      => [
                 'articleConfirmationUrl' => $articleConfirmationUrl,
             ],
+        ], Response::HTTP_OK)->send();
+    }
+
+    public function getTransferableJournalDetails(array $args, Request $request): JsonResponse
+    {
+        $transferableSubmission = TransferableSubmission::where('service_id', $request->getUserVar('serviceId'))
+            ->where('uuid', $request->getUserVar('submissionId'))
+            ->first();
+        
+        if (!$transferableSubmission) {
+            return response()->json([
+                'message'   => 'Not found.',
+            ], Response::HTTP_NOT_FOUND)->send();
+        }
+
+        return response()->json([
+            'message'   => 'Found',
+            'data'      => json_decode($transferableSubmission->payload, true),
         ], Response::HTTP_OK)->send();
     }
 }
