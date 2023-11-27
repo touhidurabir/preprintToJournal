@@ -8,17 +8,21 @@ use APP\facades\Repo;
 use APP\core\Services;
 use PKP\config\Config;
 use PKP\security\Role;
+use PKP\db\DAORegistry;
 use PKP\facades\Locale;
 use APP\handler\Handler;
 use PKP\context\Context;
 use APP\core\Application;
 use Illuminate\Support\Str;
+use PKP\userGroup\UserGroup;
 use Illuminate\Http\Response;
 use Illuminate\Http\JsonResponse;
+use PKP\stageAssignment\StageAssignmentDAO;
 use PKP\security\authorization\UserRequiredPolicy;
 use PKP\security\authorization\RoleBasedHandlerOperationPolicy;
 use APP\plugins\generic\preprintToJournal\PreprintToJournalPlugin;
 use APP\plugins\generic\preprintToJournal\classes\models\RemoteService;
+use APP\submission\Submission;
 
 class JournalSubmissionHandler extends Handler
 {
@@ -149,6 +153,11 @@ class JournalSubmissionHandler extends Handler
             if ($response->getStatusCode() === Response::HTTP_OK) {
 
                 $data = json_decode($response->getBody(), true)['data'];
+                $submission = $this->storeSubmission($data, $request);
+                
+                // 4. once the moving complete/failed, send a coar notification (LDN notification)
+
+                return $request->redirect($context->getPath(), 'submission', null, null, ['id' => $submission->getId()], 'details');
             }
 
             return false;
@@ -157,9 +166,86 @@ class JournalSubmissionHandler extends Handler
 
             ray($exception);
         }
-        // 4. once the moving complete/failed, send a coar notification (LDN notification)
+        
         // 5. May be notify OPS end via other means about the result if the LDN notification is not sufficient
         // 6. once submission done moving, redirect to submission wizard of transfered submission
+    }
+
+    protected function storeSubmission(array $data, Request $request): Submission
+    {
+        $context    = $request->getContext();
+        $user       = $request->getUser();
+
+        $params = [
+            'contextId'                 => $context->getId(),
+            'locale'                    => $data['locale'],
+            'sectionId'                 => $data['sectionId'],
+            'submissionRequirements'    => true,
+            'privacyConsent'            => true,
+        ];
+
+        $submitterUserGroups = Repo::userGroup()
+            ->getCollector()
+            ->filterByContextIds([$context->getId()])
+            ->filterByUserIds([$user->getId()])
+            ->filterByRoleIds([Role::ROLE_ID_MANAGER, Role::ROLE_ID_AUTHOR])
+            ->getMany();
+        
+        if ($submitterUserGroups->count()) {
+
+            $submitAsUserGroup = $submitterUserGroups
+                ->sort(function (UserGroup $a, UserGroup $b) {
+                    return $a->getRoleId() === Role::ROLE_ID_AUTHOR ? 1 : -1;
+                })
+                ->first();
+        } else {
+            $submitAsUserGroup = Repo::userGroup()->getFirstSubmitAsAuthorUserGroup($context->getId());
+            Repo::userGroup()->assignUserToGroup($user->getId(), $submitAsUserGroup->getId());
+        }
+
+        $publicationProps = [];
+        $publicationProps['sectionId'] = $params['sectionId'];
+        unset($params['sectionId']);
+
+        $params = (new \PKP\submission\Sanitizer())->sanitize($params, ['title', 'subtitle']);
+
+        $submission = Repo::submission()->newDataObject($params);
+        $publication = Repo::publication()->newDataObject($publicationProps);
+        $submissionId = Repo::submission()->add($submission, $publication, $context);
+
+        $submission = Repo::submission()->get($submissionId);
+
+        // Assign submitter to submission
+        /** @var StageAssignmentDAO $stageAssignmentDao */
+        $stageAssignmentDao = DAORegistry::getDAO('StageAssignmentDAO');
+        $stageAssignmentDao->build(
+            $submission->getId(),
+            $submitAsUserGroup->getId(),
+            $request->getUser()->getId(),
+            $submitAsUserGroup->getRecommendOnly(),
+            // Authors can always edit metadata before submitting
+            $submission->getData('submissionProgress')
+                ? true
+                : $submitAsUserGroup->getPermitMetadataEdit()
+        );
+
+        // Create an author record from the submitter's user account
+        if ($submitAsUserGroup->getRoleId() === Role::ROLE_ID_AUTHOR) {
+            $author = Repo::author()->newAuthorFromUser($user);
+            $author->setData('publicationId', $publication->getId());
+            $author->setUserGroupId($submitAsUserGroup->getId());
+            $authorId = Repo::author()->add($author);
+            Repo::publication()->edit($publication, ['primaryContactId' => $authorId]);
+        }
+
+        // $publication = Repo::publication()->get((int) $submission->getCurrentPublication()->getId());
+        Repo::publication()->edit($publication, [
+            'title'     => $data['title'],
+            'abstract'  => $data['abstract'],
+            'id'        => $publication->getId(),
+        ]);
+
+        return $submission;
     }
 
     protected function getLocaleOptions(Context $context): array
