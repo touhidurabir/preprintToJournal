@@ -56,7 +56,7 @@ class JournalPublishingHandler extends Handler
         }
 
         $contextService = Services::get('context'); /** @var \APP\services\ContextService $contextService */
-        $context = $contextService->get((int)$service->context_id); /** @var \App\server\Server $context */
+        $context = $contextService->get((int)$service->context_id); /** @var \PKP\context\Context|\App\server\Server $context */
 
         $journalPath = last(explode('/', $service->url));
         $journalVerifyUrl = Str::of(

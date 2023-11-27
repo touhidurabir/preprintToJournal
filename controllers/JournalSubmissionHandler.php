@@ -164,7 +164,7 @@ class JournalSubmissionHandler extends Handler
 
         } catch(Throwable $exception) {
 
-            ray($exception);
+            // ray($exception);
         }
         
         // 5. May be notify OPS end via other means about the result if the LDN notification is not sufficient
