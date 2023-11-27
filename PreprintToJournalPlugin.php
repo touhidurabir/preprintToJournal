@@ -4,8 +4,10 @@ namespace APP\plugins\generic\preprintToJournal;
 
 use APP\core\Request;
 use PKP\plugins\Hook;
+use PKP\context\Context;
 use APP\core\Application;
 use PKP\core\JSONMessage;
+use Illuminate\Support\Str;
 use PKP\linkAction\LinkAction;
 use PKP\plugins\GenericPlugin;
 use APP\template\TemplateManager;
@@ -16,6 +18,7 @@ use APP\plugins\generic\preprintToJournal\PreprintToJournalSchemaMigration;
 use APP\plugins\generic\preprintToJournal\controllers\JournalPublishingHandler;
 use APP\plugins\generic\preprintToJournal\controllers\JournalSubmissionHandler;
 use APP\plugins\generic\preprintToJournal\classes\components\JournalSelectionForm;
+use APP\plugins\generic\preprintToJournal\controllers\LDNInboxNotificationHandler;
 use APP\plugins\generic\preprintToJournal\controllers\tab\service\PreprintToJournalServiceTabHandler;
 use APP\plugins\generic\preprintToJournal\controllers\tab\service\PreprintToJournalServiceGridHandler;
 
@@ -60,6 +63,7 @@ class PreprintToJournalPlugin extends GenericPlugin
 
         $this->setupServiceSettingsComponents();
         $this->setupJournalServiceListComponent();
+        $this->setupLDNNotificationInbox();
 
         if (self::isOJS()) {
             $this->setupJournalSubmissionHandler();
@@ -149,6 +153,22 @@ class PreprintToJournalPlugin extends GenericPlugin
         }
 
         return parent::manage($args, $request);
+    }
+
+    public function setupLDNNotificationInbox(): void
+    {
+        Hook::add('LoadComponentHandler', function (string $hookName, array $args): bool {
+
+            $component = $args[0];
+
+            if ($component !== 'plugins.generic.preprintToJournal.controllers.LDNInboxNotificationHandler') {
+                return false;
+            }
+
+            LDNInboxNotificationHandler::setPlugin($this);
+
+            return true;
+        });
     }
 
     public function setupServiceSettingsComponents(): void
@@ -376,6 +396,37 @@ class PreprintToJournalPlugin extends GenericPlugin
     public function getCssURL()
     {
         return Application::get()->getRequest()->getBaseUrl() . DIRECTORY_SEPARATOR . $this->getPluginPath() . DIRECTORY_SEPARATOR . 'css';
+    }
+
+    public static function getLDNInboxUrl(string $serviceUrl = null): string
+    {
+        $request = Application::get()->getRequest();
+
+        $contextUrlPath = $serviceUrl 
+            ? last(explode('/', $serviceUrl)) 
+            : $request->getContext()->getData('urlPath');
+
+        $url = Str::of(
+            $request->getDispatcher()->url(
+                $request,
+                Application::ROUTE_COMPONENT,
+                $contextUrlPath,
+                'plugins.generic.preprintToJournal.controllers.LDNInboxNotificationHandler',
+                'inbox'
+            )
+        );
+
+        return $serviceUrl
+            ? $url->replace(static::getContextBaseUrl(), $serviceUrl)->__toString()
+            : $url->__toString();
+    }
+
+    public static function getContextBaseUrl(Context $context = null): string
+    {
+        $request = Application::get()->getRequest();
+        $context ??= $request->getContext();
+
+        return $request->getBaseUrl() . '/index.php/' . $context->getData('urlPath');
     }
 
     protected function shouldShowJournalPublicationTabInOPS(string $requestedPage): bool

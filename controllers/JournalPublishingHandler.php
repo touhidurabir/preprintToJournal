@@ -21,6 +21,7 @@ use APP\plugins\generic\preprintToJournal\classes\models\Submission as Transfera
 use APP\plugins\generic\preprintToJournal\PreprintToJournalPlugin;
 use APP\plugins\generic\preprintToJournal\controllers\tab\service\ServiceManager;
 use APP\submission\Submission;
+use Carbon\Carbon;
 
 class JournalPublishingHandler extends Handler
 {
@@ -220,6 +221,28 @@ class JournalPublishingHandler extends Handler
         return response()->json([
             'message'   => 'Found',
             'data'      => json_decode($transferableSubmission->payload, true),
+        ], Response::HTTP_OK)->send();
+    }
+
+    public function confirmTransferAccept(array $args, Request $request): JsonResponse
+    {
+        $transferableSubmission = TransferableSubmission::where('service_id', $request->getUserVar('serviceId'))
+            ->where('uuid', $request->getUserVar('submissionId'))
+            ->first();
+        
+        if (!$transferableSubmission) {
+            return response()->json([
+                'message'   => 'Not found.',
+            ], Response::HTTP_NOT_FOUND)->send();
+        }
+
+        $transferableSubmission->update([
+            'remote_submission_id'  => $request->getUserVar('remoteSubmissionId'),
+            'transfered_at'         => Carbon::now()
+        ]);
+
+        return response()->json([
+            'message'   => 'success',
         ], Response::HTTP_OK)->send();
     }
 }
