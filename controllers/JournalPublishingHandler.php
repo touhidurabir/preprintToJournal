@@ -164,10 +164,16 @@ class JournalPublishingHandler extends Handler
             'submission_id' => $data['submissionId'],
             'service_id'    => $data['serviceId'],
             'payload'       => json_encode([
-                'journalLocale'     => $data['journalLocale'],
-                'journalSectionId'  => $data['journalSectionId'],
-                'preprintTitle'     => $data['preprintTitle'],
-                'preprintAbstract'  => $data['preprintAbstract']
+                'locale'                    => $data['journalLocale'],
+                'sectionId'                 => $data['journalSectionId'],
+                'submissionRequirements'    => true,
+                'privacyConsent'            => true,
+                'title'                     => [
+                    $data['journalLocale'] => $data['preprintTitle']
+                ],
+                'abstract'                  => [
+                    $data['journalLocale'] => $data['preprintAbstract']
+                ]
             ]),
         ]);
 
