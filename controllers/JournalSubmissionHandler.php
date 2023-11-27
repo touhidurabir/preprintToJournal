@@ -16,13 +16,14 @@ use APP\core\Application;
 use Illuminate\Support\Str;
 use PKP\userGroup\UserGroup;
 use Illuminate\Http\Response;
+use APP\submission\Submission;
 use Illuminate\Http\JsonResponse;
 use PKP\stageAssignment\StageAssignmentDAO;
 use PKP\security\authorization\UserRequiredPolicy;
+use PKP\security\authorization\PKPSiteAccessPolicy;
 use PKP\security\authorization\RoleBasedHandlerOperationPolicy;
 use APP\plugins\generic\preprintToJournal\PreprintToJournalPlugin;
 use APP\plugins\generic\preprintToJournal\classes\models\RemoteService;
-use APP\submission\Submission;
 
 class JournalSubmissionHandler extends Handler
 {
@@ -32,9 +33,27 @@ class JournalSubmissionHandler extends Handler
     {
         static::$plugin = $plugin;
     }
+
+    /**
+     * Constructor
+     */
+    public function __construct()
+    {
+        parent::__construct();
+
+        // $this->addRoleAssignment(
+        //     [Role::ROLE_ID_MANAGER, Role::ROLE_ID_AUTHOR,],
+        //     ['confirmJournalTransfer']
+        // );
+    }
     
     public function authorize($request, &$args, $roleAssignments)
     {
+        // $this->addPolicy(new PKPSiteAccessPolicy(
+        //     $request, 
+        //     ['confirmJournalTransfer'], 
+        //     $roleAssignments
+        // ));
         // $this->addPolicy(new UserRequiredPolicy($request), true);
         // $this->addPolicy(new RoleBasedHandlerOperationPolicy($request, [Role::ROLE_ID_AUTHOR], ['confirmJournalTransfer']));
 
@@ -110,7 +129,7 @@ class JournalSubmissionHandler extends Handler
         // 2. if not, redirect to login
         // 3. if logged in/after login, start moving the submission
         $remoteService = RemoteService::find($request->getUserVar('serviceId'));
-        
+
         if (!$remoteService) {
             return response()->json([
                 'message' => 'Service not found',
@@ -169,6 +188,36 @@ class JournalSubmissionHandler extends Handler
         
         // 5. May be notify OPS end via other means about the result if the LDN notification is not sufficient
         // 6. once submission done moving, redirect to submission wizard of transfered submission
+    }
+
+    protected function sendCoarNotifyRequestIngestNotification(Submission $submission)
+    {
+        // $notification = [
+        //     "id" => "urn:uuid:" . Str::uuid(),
+        //     "@context" => array(
+        //         "https://www.w3.org/ns/activitystreams",
+        //         "https://purl.org/coar/notify"
+        //     ),
+        //     "type" => array(
+        //         "Offer",
+        //         "coar-notify:IngestAction"
+        //     ),
+        //     "actor" => array(
+        //         "id" => PreprintToJournalPlugin::getCon,
+        //         "name" => $originName,
+        //         "type" => "Service",
+        //     ),
+        //     "object" => array(
+        //         "id" => $doi,
+        //         "ietf:cite-as" => "https://doi.org/" . $doi,
+        //     ),
+        //     "origin" => array(
+        //         "id" => $originHomeUrl,
+        //         "inbox" => $originInboxUrl,
+        //         "type" => "Service",
+        //     ),
+        //     "target" => $target,
+        // ];
     }
 
     protected function storeSubmission(array $data, Request $request): Submission
