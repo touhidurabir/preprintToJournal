@@ -11,7 +11,7 @@ use APP\plugins\generic\preprintToJournal\classes\models\RemoteService;
 use APP\plugins\generic\preprintToJournal\classes\models\Service;
 use APP\plugins\generic\preprintToJournal\PreprintToJournalPlugin;
 use APP\plugins\generic\preprintToJournal\controllers\tab\service\form\ServiceForm;
-use APP\plugins\generic\preprintToJournal\controllers\tab\service\ServiceManager;
+use APP\plugins\generic\preprintToJournal\classes\managers\ServiceManager;
 
 class PreprintToJournalServiceTabHandler extends Handler
 {

@@ -13,6 +13,7 @@ use PKP\facades\Locale;
 use APP\handler\Handler;
 use PKP\context\Context;
 use APP\core\Application;
+use APP\plugins\generic\preprintToJournal\classes\managers\LDNNotificationManager;
 use Illuminate\Support\Str;
 use PKP\userGroup\UserGroup;
 use Illuminate\Http\Response;
@@ -126,7 +127,9 @@ class JournalSubmissionHandler extends Handler
     public function confirmJournalTransfer(array $args, Request $request)
     {
         // 1. check if user is logged in
+
         // 2. if not, redirect to login
+
         // 3. if logged in/after login, start moving the submission
         $remoteService = RemoteService::find($request->getUserVar('serviceId'));
 
@@ -137,7 +140,7 @@ class JournalSubmissionHandler extends Handler
         }
 
         $contextService = Services::get('context'); /** @var \APP\services\ContextService $contextService */
-        $context = $contextService->get((int)$remoteService->context_id); /** @var \App\server\Server $context */
+        $context = $contextService->get((int)$remoteService->context_id); /** @var \PKP\context\Context|\App\server\Server $context */
 
         $serverPath = last(explode('/', $remoteService->url));
         $journalConfigDetailsUrl = Str::of(
@@ -175,7 +178,12 @@ class JournalSubmissionHandler extends Handler
                 $submission = $this->storeSubmission($data, $request);
                 
                 // 4. once the moving complete/failed, send a coar notification (LDN notification)
+                $this->sendCoarNotifyRequestIngestNotification($context, $submission, $remoteService);
 
+                // 5. Notify OPS end via other means about the result if the LDN notification is not sufficient
+                $this->confirmSubmissionAcceptance($context, $submission, $remoteService);
+
+                // 6. once submission done moving, redirect to submission wizard of transfered submission
                 return $request->redirect($context->getPath(), 'submission', null, null, ['id' => $submission->getId()], 'details');
             }
 
@@ -185,32 +193,70 @@ class JournalSubmissionHandler extends Handler
 
             // ray($exception);
         }
-        
-        // 5. May be notify OPS end via other means about the result if the LDN notification is not sufficient
-        // 6. once submission done moving, redirect to submission wizard of transfered submission
     }
 
-    protected function sendCoarNotifyRequestIngestNotification(Context $context, Submission $submission, RemoteService $remoteService)
+    protected function confirmSubmissionAcceptance(Context $context, Submission $submission, RemoteService $remoteService): void
     {
         $request = Application::get()->getRequest();
 
-        $notification = [
-            "id" => "urn:uuid:" . Str::uuid(),
-            "@context" => [
-                "https://www.w3.org/ns/activitystreams",
-                "https://purl.org/coar/notify"
-            ],
-            "type" => [
-                "Offer",
-                "coar-notify:IngestAction"
-            ],
-            "actor" => [
-                "id"    => PreprintToJournalPlugin::getContextBaseUrl(),
-                "name"  => $context->getData('name', Locale::getPrimaryLocale()),
-                "type"  => "Service",
-            ],
-            "object" => [
-                "id" => $request->getDispatcher()->url(
+        $serverPath = last(explode('/', $remoteService->url));
+        $confirmUrl = Str::of(
+            $request->getDispatcher()->url(
+                $request,
+                Application::ROUTE_COMPONENT,
+                $serverPath,
+                'plugins.generic.preprintToJournal.controllers.JournalPublishingHandler',
+                'confirmTransferAccept',
+                null,
+                [
+                    'submissionId'          => $request->getUserVar('uuid'), 
+                    'serviceId'             => $remoteService->remote_service_id,
+                    'remoteSubmissionId'    => $submission->getId(),
+                ]
+            )
+        )
+        ->replace($request->getBaseUrl() . '/index.php/' . $context->getData('urlPath'), $remoteService->url)
+        ->__toString();
+
+        $httpClient = Application::get()->getHttpClient();
+        $header = [
+            'Accept'    => 'application/json',
+        ];
+
+        $response = $httpClient->request('POST', $confirmUrl, [
+            'http_errors'   => false,
+            'headers'       => $header,
+            'form_params'   => [
+                'submissionId'          => $request->getUserVar('uuid'), 
+                'serviceId'             => $remoteService->remote_service_id,
+                'remoteSubmissionId'    => $submission->getId(),
+            ]
+        ]);
+    }
+
+    protected function sendCoarNotifyRequestIngestNotification(Context $context, Submission $submission, RemoteService $remoteService): void
+    {
+        $request = Application::get()->getRequest();
+
+        $ldnNotificationManager = new LDNNotificationManager;
+
+        $ldnNotificationManager
+            ->addNotificationProperty('id', "urn:uuid:" . Str::uuid())
+            ->addNotificationProperty('@context', [
+                'https://www.w3.org/ns/activitystreams',
+                'https://purl.org/coar/notify',
+            ])
+            ->addNotificationProperty('type', [
+                'Offer',
+                'coar-notify:IngestAction',
+            ])
+            ->addNotificationProperty('actor', [
+                'id'    => PreprintToJournalPlugin::getContextBaseUrl(),
+                'name'  => $context->getData('name', Locale::getPrimaryLocale()),
+                'type'  => 'Service',
+            ])
+            ->addNotificationProperty('object', [
+                'id' => $request->getDispatcher()->url(
                     $request,
                     Application::ROUTE_COMPONENT,
                     $context->getData('urlPath'),
@@ -219,34 +265,26 @@ class JournalSubmissionHandler extends Handler
                     null,
                     ['id' => $submission->getId()]
                 ),
-                "type" => "sorg:Acticle",
-            ],
-            "origin" => [
-                "id"    => PreprintToJournalPlugin::getContextBaseUrl(),
-                "inbox" => PreprintToJournalPlugin::getLDNInboxUrl(),
-                "type"  => "Service",
-            ],
-            "target" => [
-                "id"    => $remoteService->url,
-                "inbox" =>  PreprintToJournalPlugin::getLDNInboxUrl($remoteService->url),
-                "type"  => "Service"
-            ],
-        ];
-
-        $httpClient = Application::get()->getHttpClient();
-        $header = [
-            'Accept'    => 'application/json',
-        ];
-
-        $response = $httpClient->request(
-            'POST',
-            PreprintToJournalPlugin::getLDNInboxUrl($remoteService->url),
-            [
-                'http_errors'   => false,
-                'headers'       => $header,
-                'json'          => $notification
-            ]
-        );
+                'type' => 'sorg:Acticle',
+            ])
+            ->addNotificationProperty('origin', [
+                'id'    => PreprintToJournalPlugin::getContextBaseUrl(),
+                'inbox' => PreprintToJournalPlugin::getLDNInboxUrl(),
+                'type'  => 'Service',
+            ])
+            ->addNotificationProperty('target', [
+                'id'    => $remoteService->url,
+                'inbox' =>  PreprintToJournalPlugin::getLDNInboxUrl($remoteService->url),
+                'type'  => 'Service',
+            ]);
+        
+        if ($ldnNotificationManager->sendNotification(PreprintToJournalPlugin::getLDNInboxUrl($remoteService->url))) {
+            $ldnNotificationManager->storeNotification(
+                LDNNotificationManager::DIRECTION_OUTBOUND, 
+                $ldnNotificationManager->getNotification(),
+                (int)$submission->getId()
+            );
+        }
     }
 
     protected function storeSubmission(array $data, Request $request): Submission

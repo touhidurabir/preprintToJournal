@@ -1,6 +1,6 @@
 <?php
 
-namespace APP\plugins\generic\preprintToJournal\controllers\tab\service;
+namespace APP\plugins\generic\preprintToJournal\classes\managers;
 
 use Throwable;
 use Carbon\Carbon;

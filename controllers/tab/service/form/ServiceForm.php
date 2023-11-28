@@ -15,7 +15,7 @@ use PKP\form\validation\FormValidatorCSRF;
 use PKP\form\validation\FormValidatorPost;
 use APP\plugins\generic\preprintToJournal\classes\models\Service;
 use APP\plugins\generic\preprintToJournal\PreprintToJournalPlugin;
-use APP\plugins\generic\preprintToJournal\controllers\tab\service\ServiceManager;
+use APP\plugins\generic\preprintToJournal\classes\managers\ServiceManager;
 
 class ServiceForm extends Form
 {

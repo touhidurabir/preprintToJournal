@@ -3,6 +3,7 @@
 namespace APP\plugins\generic\preprintToJournal\controllers;
 
 use Throwable;
+use Carbon\Carbon;
 use APP\core\Request;
 use APP\facades\Repo;
 use PKP\plugins\Hook;
@@ -10,18 +11,18 @@ use APP\core\Services;
 use PKP\facades\Locale;
 use APP\handler\Handler;
 use APP\core\Application;
-use APP\plugins\generic\preprintToJournal\classes\components\JournalSubmissionForm;
 use Illuminate\Support\Str;
 use Illuminate\Http\Response;
+use APP\submission\Submission;
 use APP\template\TemplateManager;
 use Illuminate\Http\JsonResponse;
 use PKP\security\authorization\UserRequiredPolicy;
 use APP\plugins\generic\preprintToJournal\classes\models\Service;
-use APP\plugins\generic\preprintToJournal\classes\models\Submission as TransferableSubmission;
 use APP\plugins\generic\preprintToJournal\PreprintToJournalPlugin;
-use APP\plugins\generic\preprintToJournal\controllers\tab\service\ServiceManager;
-use APP\submission\Submission;
-use Carbon\Carbon;
+use APP\plugins\generic\preprintToJournal\classes\managers\ServiceManager;
+use APP\plugins\generic\preprintToJournal\classes\managers\LDNNotificationManager;
+use APP\plugins\generic\preprintToJournal\classes\components\JournalSubmissionForm;
+use APP\plugins\generic\preprintToJournal\classes\models\Submission as TransferableSubmission;
 
 class JournalPublishingHandler extends Handler
 {
@@ -181,7 +182,7 @@ class JournalPublishingHandler extends Handler
         $service = Service::find($data['serviceId']);
 
         $contextService = Services::get('context'); /** @var \APP\services\ContextService $contextService */
-        $context = $contextService->get((int)$service->context_id); /** @var \App\server\Server $context */
+        $context = $contextService->get((int)$service->context_id); /** @var \PKP\context\Context|\App\server\Server $context */
         
         $journalPath = last(explode('/', $service->url));
         $articleConfirmationUrl = Str::of(
@@ -241,10 +242,79 @@ class JournalPublishingHandler extends Handler
             'transfered_at'         => Carbon::now()
         ]);
 
+        $this->sendCoarNotifyRelationAnnounceNotification($transferableSubmission->refresh());
+
         return response()->json([
             'message'   => 'success',
         ], Response::HTTP_OK)->send();
     }
+
+    protected function sendCoarNotifyRelationAnnounceNotification(TransferableSubmission $transferableSubmission): void
+    {
+        $request = Application::get()->getRequest();
+
+        $service = Service::where('id', $transferableSubmission->service_id)->first();
+
+        $contextService = Services::get('context'); /** @var \APP\services\ContextService $contextService */
+        $context = $contextService->get((int)$service->context_id); /** @var \PKP\context\Context|\App\server\Server $context */
+
+        $submission = Repo::submission()->get($transferableSubmission->submission_id);
+
+        $submissionUrl = $request->getDispatcher()->url(
+            $request,
+            Application::ROUTE_COMPONENT,
+            $context->getData('urlPath'),
+            'submission',
+            null,
+            null,
+            ['id' => $submission->getId()]
+        );
+
+        $ldnNotificationManager = new LDNNotificationManager;
+
+        $ldnNotificationManager
+            ->addNotificationProperty('id', "urn:uuid:" . Str::uuid())
+            ->addNotificationProperty('@context', [
+                'https://www.w3.org/ns/activitystreams',
+                'https://purl.org/coar/notify',
+            ])
+            ->addNotificationProperty('type', [
+                'Announce',
+                'coar-notify:RelationshipAction',
+            ])
+            ->addNotificationProperty('actor', [
+                'id'    => PreprintToJournalPlugin::getContextBaseUrl(),
+                'name'  => $context->getData('name', Locale::getPrimaryLocale()),
+                'type'  => 'Service',
+            ])
+            ->addNotificationProperty('object', [
+                'id' => $submissionUrl,
+                'type' => 'sorg:Preprint',
+            ])
+            ->addNotificationProperty('context', [
+                'id' => $submissionUrl,
+                'type' => 'sorg:Preprint',
+            ])
+            ->addNotificationProperty('origin', [
+                'id'    => PreprintToJournalPlugin::getContextBaseUrl(),
+                'inbox' => PreprintToJournalPlugin::getLDNInboxUrl(),
+                'type'  => 'Service',
+            ])
+            ->addNotificationProperty('target', [
+                'id'    => $service->url,
+                'inbox' =>  PreprintToJournalPlugin::getLDNInboxUrl($service->url),
+                'type'  => 'Service',
+            ]);
+        
+        if ($ldnNotificationManager->sendNotification(PreprintToJournalPlugin::getLDNInboxUrl($service->url))) {
+            $ldnNotificationManager->storeNotification(
+                LDNNotificationManager::DIRECTION_OUTBOUND, 
+                $ldnNotificationManager->getNotification(),
+                (int)$submission->getId()
+            );
+        }
+    }
+    
 }
 
 if (!PKP_STRICT_MODE) {
