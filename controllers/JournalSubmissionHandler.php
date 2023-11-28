@@ -190,34 +190,63 @@ class JournalSubmissionHandler extends Handler
         // 6. once submission done moving, redirect to submission wizard of transfered submission
     }
 
-    protected function sendCoarNotifyRequestIngestNotification(Submission $submission)
+    protected function sendCoarNotifyRequestIngestNotification(Context $context, Submission $submission, RemoteService $remoteService)
     {
-        // $notification = [
-        //     "id" => "urn:uuid:" . Str::uuid(),
-        //     "@context" => array(
-        //         "https://www.w3.org/ns/activitystreams",
-        //         "https://purl.org/coar/notify"
-        //     ),
-        //     "type" => array(
-        //         "Offer",
-        //         "coar-notify:IngestAction"
-        //     ),
-        //     "actor" => array(
-        //         "id" => PreprintToJournalPlugin::getCon,
-        //         "name" => $originName,
-        //         "type" => "Service",
-        //     ),
-        //     "object" => array(
-        //         "id" => $doi,
-        //         "ietf:cite-as" => "https://doi.org/" . $doi,
-        //     ),
-        //     "origin" => array(
-        //         "id" => $originHomeUrl,
-        //         "inbox" => $originInboxUrl,
-        //         "type" => "Service",
-        //     ),
-        //     "target" => $target,
-        // ];
+        $request = Application::get()->getRequest();
+
+        $notification = [
+            "id" => "urn:uuid:" . Str::uuid(),
+            "@context" => [
+                "https://www.w3.org/ns/activitystreams",
+                "https://purl.org/coar/notify"
+            ],
+            "type" => [
+                "Offer",
+                "coar-notify:IngestAction"
+            ],
+            "actor" => [
+                "id"    => PreprintToJournalPlugin::getContextBaseUrl(),
+                "name"  => $context->getData('name', Locale::getPrimaryLocale()),
+                "type"  => "Service",
+            ],
+            "object" => [
+                "id" => $request->getDispatcher()->url(
+                    $request,
+                    Application::ROUTE_COMPONENT,
+                    $context->getData('urlPath'),
+                    'submission',
+                    null,
+                    null,
+                    ['id' => $submission->getId()]
+                ),
+                "type" => "sorg:Acticle",
+            ],
+            "origin" => [
+                "id"    => PreprintToJournalPlugin::getContextBaseUrl(),
+                "inbox" => PreprintToJournalPlugin::getLDNInboxUrl(),
+                "type"  => "Service",
+            ],
+            "target" => [
+                "id"    => $remoteService->url,
+                "inbox" =>  PreprintToJournalPlugin::getLDNInboxUrl($remoteService->url),
+                "type"  => "Service"
+            ],
+        ];
+
+        $httpClient = Application::get()->getHttpClient();
+        $header = [
+            'Accept'    => 'application/json',
+        ];
+
+        $response = $httpClient->request(
+            'POST',
+            PreprintToJournalPlugin::getLDNInboxUrl($remoteService->url),
+            [
+                'http_errors'   => false,
+                'headers'       => $header,
+                'json'          => $notification
+            ]
+        );
     }
 
     protected function storeSubmission(array $data, Request $request): Submission
