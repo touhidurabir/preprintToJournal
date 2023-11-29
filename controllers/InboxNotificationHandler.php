@@ -18,7 +18,7 @@ class InboxNotificationHandler extends Handler
     
     public function authorize($request, &$args, $roleAssignments)
     {
-        return parent::authorize($request, $args, $roleAssignments);
+        return true;
     }
 
     public function inbox(array $args, Request $request)
@@ -31,4 +31,8 @@ class InboxNotificationHandler extends Handler
             $request->getUserVar('submissionId')
         );
     }
+}
+
+if (!PKP_STRICT_MODE) {
+    class_alias('\APP\plugins\generic\preprintToJournal\controllers\InboxNotificationHandler', '\InboxNotificationHandler');
 }
