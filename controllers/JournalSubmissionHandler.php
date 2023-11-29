@@ -195,7 +195,7 @@ class JournalSubmissionHandler extends Handler
 
         } catch(Throwable $exception) {
 
-            ray($exception);
+            // ray($exception);
         }
     }
 
@@ -221,7 +221,7 @@ class JournalSubmissionHandler extends Handler
         )
         ->replace($request->getBaseUrl() . '/index.php/' . $context->getData('urlPath'), $remoteService->url)
         ->__toString();
-        ray($confirmUrl);
+
         $httpClient = Application::get()->getHttpClient();
         $header = [
             'Accept'    => 'application/json',
@@ -273,7 +273,7 @@ class JournalSubmissionHandler extends Handler
                 'inbox' => PreprintToJournalPlugin::getLDNInboxUrl($remoteService->url),
                 'type'  => 'Service',
             ]);
-        ray(PreprintToJournalPlugin::getLDNInboxUrl($remoteService->url));
+        
         if ($ldnNotificationManager->sendNotification(PreprintToJournalPlugin::getLDNInboxUrl($remoteService->url))) {
             $ldnNotificationManager->storeNotification(
                 LDNNotificationManager::DIRECTION_OUTBOUND, 
