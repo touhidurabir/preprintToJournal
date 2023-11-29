@@ -178,8 +178,7 @@ class JournalSubmissionHandler extends Handler
                 $data = $responseBody['data'];
                 $resourceUrl = $responseBody['resourceUrl'];
 
-                // $submission = $this->storeSubmission($data, $request);
-                $submission = Repo::submission()->get(59);
+                $submission = $this->storeSubmission($data, $request);
                 
                 // 4. once the moving complete/failed, send a coar notification (LDN notification)
                 $this->sendCoarNotifyRequestIngestNotification($context, $submission, $remoteService, $resourceUrl);
@@ -274,7 +273,13 @@ class JournalSubmissionHandler extends Handler
                 'type'  => 'Service',
             ]);
         
-        if ($ldnNotificationManager->sendNotification(PreprintToJournalPlugin::getLDNInboxUrl($remoteService->url))) {
+        $notificationSendStatus = $ldnNotificationManager->sendNotification(
+            PreprintToJournalPlugin::getLDNInboxUrl($remoteService->url),
+            $ldnNotificationManager->getNotification(),
+            ['submissionId' => $submission->getId()]
+        );
+
+        if ($notificationSendStatus) {
             $ldnNotificationManager->storeNotification(
                 LDNNotificationManager::DIRECTION_OUTBOUND, 
                 $ldnNotificationManager->getNotification(),

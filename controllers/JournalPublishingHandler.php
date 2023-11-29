@@ -320,6 +320,12 @@ class JournalPublishingHandler extends Handler
                 'type'  => 'Service',
             ]);
         
+        $notificationSendStatus = $ldnNotificationManager->sendNotification(
+            PreprintToJournalPlugin::getLDNInboxUrl($service->url),
+            $ldnNotificationManager->getNotification(),
+            ['submissionId' => $submission->getId()]
+        );    
+
         if ($ldnNotificationManager->sendNotification(PreprintToJournalPlugin::getLDNInboxUrl($service->url))) {
             $ldnNotificationManager->storeNotification(
                 LDNNotificationManager::DIRECTION_OUTBOUND, 
