@@ -15,10 +15,10 @@ use PKP\submission\PKPSubmission;
 use PKP\linkAction\request\AjaxModal;
 use PKP\components\forms\FormComponent;
 use APP\plugins\generic\preprintToJournal\PreprintToJournalSchemaMigration;
+use APP\plugins\generic\preprintToJournal\controllers\InboxNotificationHandler;
 use APP\plugins\generic\preprintToJournal\controllers\JournalPublishingHandler;
 use APP\plugins\generic\preprintToJournal\controllers\JournalSubmissionHandler;
 use APP\plugins\generic\preprintToJournal\classes\components\JournalSelectionForm;
-use APP\plugins\generic\preprintToJournal\controllers\LDNInboxNotificationHandler;
 use APP\plugins\generic\preprintToJournal\controllers\tab\service\PreprintToJournalServiceTabHandler;
 use APP\plugins\generic\preprintToJournal\controllers\tab\service\PreprintToJournalServiceGridHandler;
 
@@ -161,11 +161,11 @@ class PreprintToJournalPlugin extends GenericPlugin
 
             $component = $args[0];
 
-            if ($component !== 'plugins.generic.preprintToJournal.controllers.LDNInboxNotificationHandler') {
+            if ($component !== 'plugins.generic.preprintToJournal.controllers.InboxNotificationHandler') {
                 return false;
             }
 
-            LDNInboxNotificationHandler::setPlugin($this);
+            InboxNotificationHandler::setPlugin($this);
 
             return true;
         });
@@ -411,7 +411,7 @@ class PreprintToJournalPlugin extends GenericPlugin
                 $request,
                 Application::ROUTE_COMPONENT,
                 $contextUrlPath,
-                'plugins.generic.preprintToJournal.controllers.LDNInboxNotificationHandler',
+                'plugins.generic.preprintToJournal.controllers.InboxNotificationHandler',
                 'inbox'
             )
         );

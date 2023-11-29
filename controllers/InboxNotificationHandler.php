@@ -7,7 +7,7 @@ use APP\handler\Handler;
 use APP\plugins\generic\preprintToJournal\classes\managers\LDNNotificationManager;
 use APP\plugins\generic\preprintToJournal\PreprintToJournalPlugin;
 
-class LDNInboxNotificationHandler extends Handler
+class InboxNotificationHandler extends Handler
 {
     public static PreprintToJournalPlugin $plugin;
 

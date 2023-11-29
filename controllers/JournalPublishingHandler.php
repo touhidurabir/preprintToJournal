@@ -219,9 +219,24 @@ class JournalPublishingHandler extends Handler
             ], Response::HTTP_NOT_FOUND)->send();
         }
 
+        $service = Service::find($transferableSubmission->service_id);
+
+        $contextService = Services::get('context'); /** @var \APP\services\ContextService $contextService */
+        $context = $contextService->get((int)$service->context_id); /** @var \PKP\context\Context|\App\server\Server $context */
+
+        $submission = Repo::submission()->get($transferableSubmission->submission_id);
+
         return response()->json([
-            'message'   => 'Found',
-            'data'      => json_decode($transferableSubmission->payload, true),
+            'message'       => 'Found',
+            'data'          => json_decode($transferableSubmission->payload, true),
+            'resourceUrl'   => $request->getDispatcher()->url(
+                $request,
+                Application::ROUTE_PAGE,
+                $context->getData('urlPath'),
+                'preprint',
+                'view',
+                ['id' => $submission->getId()]
+            )
         ], Response::HTTP_OK)->send();
     }
 
@@ -262,11 +277,10 @@ class JournalPublishingHandler extends Handler
 
         $submissionUrl = $request->getDispatcher()->url(
             $request,
-            Application::ROUTE_COMPONENT,
+            Application::ROUTE_PAGE,
             $context->getData('urlPath'),
-            'submission',
-            null,
-            null,
+            'preprint',
+            'view',
             ['id' => $submission->getId()]
         );
 
