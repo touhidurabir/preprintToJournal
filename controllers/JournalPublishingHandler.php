@@ -327,7 +327,7 @@ class JournalPublishingHandler extends Handler
             ['submissionId' => $transferableSubmission->remote_submission_id]
         );    
 
-        if ($ldnNotificationManager->sendNotification(PreprintToJournalPlugin::getLDNInboxUrl($service->url))) {
+        if ($notificationSendStatus) {
             $ldnNotificationManager->storeNotification(
                 LDNNotificationManager::DIRECTION_OUTBOUND, 
                 $ldnNotificationManager->getNotification(),
