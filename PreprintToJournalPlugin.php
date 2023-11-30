@@ -29,11 +29,6 @@ class PreprintToJournalPlugin extends GenericPlugin
         'authorDashboard',
     ];
 
-    public function __construct()
-    {
-
-    }
-
     /**
      * Determine if running application is OJS or not
      * 
@@ -41,7 +36,7 @@ class PreprintToJournalPlugin extends GenericPlugin
      */
     public static function isOJS(): bool
     {
-        return in_array(strtolower(Application::get()->getName()), ['ojs2', 'ojs']);
+        return Application::get()->getName() === 'ojs2';
     }
 
     /**
@@ -388,14 +383,6 @@ class PreprintToJournalPlugin extends GenericPlugin
     public function getJavaScriptURL()
     {
         return Application::get()->getRequest()->getBaseUrl() . DIRECTORY_SEPARATOR . $this->getPluginPath() . DIRECTORY_SEPARATOR . 'js';
-    }
-
-    /**
-     * Get the CSS URL for this plugin.
-     */
-    public function getCssURL()
-    {
-        return Application::get()->getRequest()->getBaseUrl() . DIRECTORY_SEPARATOR . $this->getPluginPath() . DIRECTORY_SEPARATOR . 'css';
     }
 
     public static function getLDNInboxUrl(string $serviceUrl = null): string

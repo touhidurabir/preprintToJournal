@@ -11,23 +11,16 @@ use APP\plugins\generic\preprintToJournal\PreprintToJournalPlugin;
 
 class PreprintToJournalSchemaMigration extends Migration
 {
-    protected const TABLE_PREFIX = 'preprint_to_journal_';
-
-    public static function generateTableName(string $tableName): string
-    {
-        return static::TABLE_PREFIX . $tableName;
-    }
-
     /**
      * Run the migrations.
      */
     public function up(): void
     {
-        Schema::create(static::generateTableName('notifications'), function (Blueprint $table) {
-            $table->unsignedBigInteger('id')->autoIncrement();
-            $table->unsignedBigInteger('submission_id')->nullable();
-            $table->string('notification_id');
-            $table->string('from_id')->nullable();
+        Schema::create('preprint_to_journal_notifications', function (Blueprint $table) {
+            $table->bigInteger('id')->autoIncrement();
+            $table->bigInteger('submission_id')->nullable();
+            $table->string('notification_identifier');
+            $table->string('from_identifier')->nullable();
             $table->text('told_to')->nullable();
             $table->text('in_reply_told')->nullable();
             $table->boolean('status')->default(1);
@@ -35,14 +28,20 @@ class PreprintToJournalSchemaMigration extends Migration
             $table->string('direction');
             $table->timestamps();
             $table->softDeletes();
+
+            $table
+                ->foreign('submission_id')
+                ->references('submission_id')
+                ->on('submissions')
+                ->onDelete('set null');
         });
 
         if ( PreprintToJournalPlugin::isOJS() ) {
 
-            Schema::create(static::generateTableName('remote_services'), function (Blueprint $table) {
-                $table->unsignedBigInteger('id')->autoIncrement();
+            Schema::create('preprint_to_journal_remote_services', function (Blueprint $table) {
+                $table->bigInteger('id')->autoIncrement();
                 $table->bigInteger('context_id');
-                $table->unsignedBigInteger('remote_service_id');
+                $table->bigInteger('remote_service_id');
                 $table->string('name', 255)->nullable();
                 $table->string('url', 255);
                 $table->string('ip')->nullable();
@@ -59,15 +58,15 @@ class PreprintToJournalSchemaMigration extends Migration
                     ->onDelete('set null');
             });
 
-            Schema::create(static::generateTableName('submissions'), function (Blueprint $table) {
-                $table->unsignedBigInteger('id')->autoIncrement();
-                $table->unsignedBigInteger('service_id');
+            Schema::create('preprint_to_journal_submissions', function (Blueprint $table) {
+                $table->bigInteger('id')->autoIncrement();
+                $table->bigInteger('service_id');
                 $table->bigInteger('submission_id');
                 $table->timestamps();
                 $table->softDeletes();
                 
                 $table
-                    ->foreign('submission_id', static::TABLE_PREFIX . 'submission_id')
+                    ->foreign('submission_id', 'preprint_to_journal_submission_id')
                     ->references('submission_id')
                     ->on('submissions')
                     ->onDelete('cascade');
@@ -75,15 +74,15 @@ class PreprintToJournalSchemaMigration extends Migration
                 $table
                     ->foreign('service_id', )
                     ->references('id')
-                    ->on(static::generateTableName('remote_services'))
+                    ->on('preprint_to_journal_remote_services')
                     ->onDelete('cascade');
             });
 
             return;
         }
 
-        Schema::create(static::generateTableName('services'), function (Blueprint $table) {
-            $table->unsignedBigInteger('id')->autoIncrement();
+        Schema::create('preprint_to_journal_services', function (Blueprint $table) {
+            $table->bigInteger('id')->autoIncrement();
             $table->bigInteger('context_id');
             $table->bigInteger('remote_service_id')->nullable();
             $table->string('name', 255);
@@ -111,10 +110,10 @@ class PreprintToJournalSchemaMigration extends Migration
                 ->onDelete('set null');
         });
 
-        Schema::create(static::generateTableName('submissions'), function (Blueprint $table) {
-            $table->unsignedBigInteger('id')->autoIncrement();
+        Schema::create('preprint_to_journal_submissions', function (Blueprint $table) {
+            $table->bigInteger('id')->autoIncrement();
             $table->uuid();
-            $table->unsignedBigInteger('service_id');
+            $table->bigInteger('service_id');
             $table->bigInteger('submission_id');
             $table->bigInteger('remote_submission_id')->nullable();
             $table->text('payload')->nullable();
@@ -123,7 +122,7 @@ class PreprintToJournalSchemaMigration extends Migration
             $table->softDeletes();
             
             $table
-                ->foreign('submission_id', static::TABLE_PREFIX . 'submission_id')
+                ->foreign('submission_id', 'preprint_to_journal_submission_id')
                 ->references('submission_id')
                 ->on('submissions')
                 ->onDelete('cascade');
@@ -131,7 +130,7 @@ class PreprintToJournalSchemaMigration extends Migration
             $table
                 ->foreign('service_id', )
                 ->references('id')
-                ->on(static::generateTableName('services'))
+                ->on('preprint_to_journal_services')
                 ->onDelete('cascade');
         });
     }
@@ -144,15 +143,15 @@ class PreprintToJournalSchemaMigration extends Migration
         DB::statement('SET FOREIGN_KEY_CHECKS=0;'); // disable the foreign key constrain
         
         if (PreprintToJournalPlugin::isOJS()) {
-            Schema::drop(static::generateTableName('remote_services'));
-            Schema::drop(static::generateTableName('notifications'));
-            Schema::drop(static::generateTableName('submissions'));
+            Schema::drop('preprint_to_journal_remote_services');
+            Schema::drop('preprint_to_journal_notifications');
+            Schema::drop('preprint_to_journal_submissions');
             return;
         }
 
-        Schema::drop(static::generateTableName('services'));
-        Schema::drop(static::generateTableName('notifications'));
-        Schema::drop(static::generateTableName('submissions'));
+        Schema::drop('preprint_to_journal_services');
+        Schema::drop('preprint_to_journal_notifications');
+        Schema::drop('preprint_to_journal_submissions');
 
         DB::statement('SET FOREIGN_KEY_CHECKS=1;'); // enable the foreign key constrain
     }

@@ -25,15 +25,10 @@ class Submission extends Model
     protected $guarded = [];
 
     /**
-     * Get the table associated with the model.
+     * Model's database table
      *
-     * @return string
+     * @var string
      */
-    public function getTable()
-    {
-        return PreprintToJournalSchemaMigration::generateTableName('submissions');
-    }
-
-    
+    protected $table = 'preprint_to_journal_submissions';
 
 }

@@ -29,14 +29,11 @@ class RemoteService extends Model
     protected $guarded = [];
 
     /**
-     * Get the table associated with the model.
+     * Model's database table
      *
-     * @return string
+     * @var string
      */
-    public function getTable()
-    {
-        return PreprintToJournalSchemaMigration::generateTableName('remote_services');
-    }
+    protected $table = 'preprint_to_journal_remote_services';
 
     /**
      * Get the table associated with the model.
@@ -44,8 +41,8 @@ class RemoteService extends Model
     public function getStatusResponse(): string
     {
         return match($this->status) {
-            static::STATUS_PENDING => 'plugins.generic.preprintToJournal.service.status.response.pending',
-            static::STATUS_AUTHORIZED   => 'plugins.generic.preprintToJournal.service.status.response.authorized',
+            static::STATUS_PENDING          => 'plugins.generic.preprintToJournal.service.status.response.pending',
+            static::STATUS_AUTHORIZED       => 'plugins.generic.preprintToJournal.service.status.response.authorized',
             static::STATUS_UNAUTHORIZED     => 'plugins.generic.preprintToJournal.service.status.response.rejected',
         };
     }

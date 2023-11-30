@@ -6,7 +6,6 @@ use Exception;
 use APP\core\Application;
 use APP\plugins\generic\preprintToJournal\classes\models\LDNNotification;
 use Illuminate\Http\Response;
-use APP\plugins\generic\preprintToJournal\PreprintToJournalPlugin;
 
 class LDNNotificationManager
 {
@@ -66,12 +65,12 @@ class LDNNotificationManager
         $notification = $notification ? json_decode($notification, true) : $this->notification;
 
         $ldnNotification = LDNNotification::create([
-            'submission_id'     => $submissionId,
-            'notification_id'   => $notification['id'],
-            'from_id'           => $notification['actor']['id'],
-            'told_to'           => $notification['target']['id'],
-            'payload'           => json_encode($notification),
-            'direction'         => $direction
+            'submission_id'             => $submissionId,
+            'notification_identifier'   => $notification['id'],
+            'from_identifier'           => $notification['actor']['id'],
+            'told_to'                   => $notification['target']['id'],
+            'payload'                   => json_encode($notification),
+            'direction'                 => $direction
         ]);
 
         return (bool)$ldnNotification?->id;
