@@ -229,6 +229,7 @@ class JournalPublishingHandler extends Handler
         return response()->json([
             'message'       => 'Found',
             'data'          => json_decode($transferableSubmission->payload, true),
+            'submissionId'  => $transferableSubmission->submission_id,
             'resourceUrl'   => $request->getDispatcher()->url(
                 $request,
                 Application::ROUTE_PAGE,
@@ -323,7 +324,7 @@ class JournalPublishingHandler extends Handler
         $notificationSendStatus = $ldnNotificationManager->sendNotification(
             PreprintToJournalPlugin::getLDNInboxUrl($service->url),
             $ldnNotificationManager->getNotification(),
-            ['submissionId' => $submission->getId()]
+            ['submissionId' => $transferableSubmission->remote_submission_id]
         );    
 
         if ($ldnNotificationManager->sendNotification(PreprintToJournalPlugin::getLDNInboxUrl($service->url))) {

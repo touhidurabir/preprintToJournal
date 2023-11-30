@@ -62,6 +62,7 @@ class PreprintToJournalSchemaMigration extends Migration
                 $table->bigInteger('id')->autoIncrement();
                 $table->bigInteger('service_id');
                 $table->bigInteger('submission_id');
+                $table->bigInteger('remote_submission_id')->nullable();
                 $table->timestamps();
                 $table->softDeletes();
                 

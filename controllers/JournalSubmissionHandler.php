@@ -25,6 +25,7 @@ use PKP\security\authorization\PKPSiteAccessPolicy;
 use PKP\security\authorization\RoleBasedHandlerOperationPolicy;
 use APP\plugins\generic\preprintToJournal\PreprintToJournalPlugin;
 use APP\plugins\generic\preprintToJournal\classes\models\RemoteService;
+use APP\plugins\generic\preprintToJournal\classes\models\Submission as TransferableSubmission;
 
 class JournalSubmissionHandler extends Handler
 {
@@ -177,8 +178,9 @@ class JournalSubmissionHandler extends Handler
                 $responseBody = json_decode($response->getBody(), true);
                 $data = $responseBody['data'];
                 $resourceUrl = $responseBody['resourceUrl'];
+                $remoteSubmissionId = $responseBody['submissionId'];
 
-                $submission = $this->storeSubmission($data, $request);
+                $submission = $this->storeSubmission($data, $remoteService, $remoteSubmissionId);
                 
                 // 4. once the moving complete/failed, send a coar notification (LDN notification)
                 $this->sendCoarNotifyRequestIngestNotification($context, $submission, $remoteService, $resourceUrl);
@@ -241,6 +243,8 @@ class JournalSubmissionHandler extends Handler
     {
         $request = Application::get()->getRequest();
 
+        $transferableSubmission = TransferableSubmission::where('submission_id', $submission->getId())->first();
+
         $ldnNotificationManager = new LDNNotificationManager;
         
         $ldnNotificationManager
@@ -276,7 +280,7 @@ class JournalSubmissionHandler extends Handler
         $notificationSendStatus = $ldnNotificationManager->sendNotification(
             PreprintToJournalPlugin::getLDNInboxUrl($remoteService->url),
             $ldnNotificationManager->getNotification(),
-            ['submissionId' => $submission->getId()]
+            ['submissionId' => $transferableSubmission->remote_submission_id]
         );
 
         if ($notificationSendStatus) {
@@ -288,8 +292,9 @@ class JournalSubmissionHandler extends Handler
         }
     }
 
-    protected function storeSubmission(array $data, Request $request): Submission
+    protected function storeSubmission(array $data, RemoteService $remoteService, int $remoteSubmissionId): Submission
     {
+        $request    = Application::get()->getRequest();
         $context    = $request->getContext();
         $user       = $request->getUser();
 
@@ -360,6 +365,12 @@ class JournalSubmissionHandler extends Handler
             'title'     => $data['title'],
             'abstract'  => $data['abstract'],
             'id'        => $publication->getId(),
+        ]);
+
+        TransferableSubmission::create([
+            'service_id'            => $remoteService->id,
+            'submission_id'         => $submission->getId(),
+            'remote_submission_id'  => $remoteSubmissionId,
         ]);
 
         return $submission;
