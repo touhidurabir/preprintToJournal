@@ -26,6 +26,7 @@ use PKP\security\authorization\RoleBasedHandlerOperationPolicy;
 use APP\plugins\generic\preprintToJournal\PreprintToJournalPlugin;
 use APP\plugins\generic\preprintToJournal\classes\models\RemoteService;
 use APP\plugins\generic\preprintToJournal\classes\models\Submission as TransferableSubmission;
+use PKP\security\Validation;
 
 class JournalSubmissionHandler extends Handler
 {
@@ -100,7 +101,7 @@ class JournalSubmissionHandler extends Handler
 
     public function registerJournalService(array $args, Request $request): JsonResponse
     {
-        $context = $request->getContext(); /** @var \APP\journal\Journal $context */
+        $context = $request->getContext(); /** @var \PKP\context\Context|\APP\journal\Journal $context */
 
         if (!$context) {
             return response()->json([
@@ -125,13 +126,8 @@ class JournalSubmissionHandler extends Handler
         ], Response::HTTP_OK)->send();
     }
 
-    public function confirmJournalTransfer(array $args, Request $request)
+    public function confirmJournalTransfer(array $args, Request $request): mixed
     {
-        // 1. check if user is logged in
-
-        // 2. if not, redirect to login
-
-        // 3. if logged in/after login, start moving the submission
         $remoteService = RemoteService::find($request->getUserVar('serviceId'));
 
         if (!$remoteService) {
@@ -141,8 +137,26 @@ class JournalSubmissionHandler extends Handler
         }
 
         $contextService = Services::get('context'); /** @var \APP\services\ContextService $contextService */
-        $context = $contextService->get((int)$remoteService->context_id); /** @var \PKP\context\Context|\App\server\Server $context */
+        $context = $contextService->get((int)$remoteService->context_id); /** @var \PKP\context\Context|\APP\journal\Journal $context */
 
+        // 1. check if user is logged in
+        if (!Validation::isLoggedIn()) {
+            
+            // 2. if not, redirect to login
+            return $request->redirectUrl(
+                $request->getDispatcher()->url(
+                    $request,
+                    Application::ROUTE_PAGE,
+                    $context->getData('urlPath'),
+                    'login',
+                    null,
+                    null,
+                    ['source' => $_SERVER['REQUEST_URI']],
+                )
+            );
+        }
+
+        // 3. if logged in/after login, start moving the submission
         $serverPath = last(explode('/', $remoteService->url));
         $journalConfigDetailsUrl = Str::of(
             $request->getDispatcher()->url(
