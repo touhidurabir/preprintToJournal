@@ -25,11 +25,13 @@ class InboxNotificationHandler extends Handler
     {
         $ldnNotificationManager = new LDNNotificationManager;
 
-        $ldnNotificationManager->storeNotification(
+        $notification = $ldnNotificationManager->storeNotification(
             LDNNotificationManager::DIRECTION_INBOUND,
             $request->getUserVar('notification'),
             $request->getUserVar('submissionId')
         );
+
+        $ldnNotificationManager->executeActionBasedOnNotification($notification);
     }
 }
 

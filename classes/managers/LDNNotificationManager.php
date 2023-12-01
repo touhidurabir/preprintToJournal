@@ -3,9 +3,11 @@
 namespace APP\plugins\generic\preprintToJournal\classes\managers;
 
 use Exception;
+use APP\facades\Repo;
 use APP\core\Application;
-use APP\plugins\generic\preprintToJournal\classes\models\LDNNotification;
 use Illuminate\Http\Response;
+use APP\plugins\generic\preprintToJournal\classes\models\LDNNotification;
+use APP\publication\Publication;
 
 class LDNNotificationManager
 {
@@ -56,7 +58,7 @@ class LDNNotificationManager
         
     }
 
-    public function storeNotification(string $direction, string $notification = null, int $submissionId = null): bool
+    public function storeNotification(string $direction, string $notification = null, int $submissionId = null): LDNNotification
     {
         if (!$notification && empty($this->notification)) {
             throw new Exception('Can not sent notification with empty notification body');
@@ -64,7 +66,7 @@ class LDNNotificationManager
 
         $notification = $notification ? json_decode($notification, true) : $this->notification;
 
-        $ldnNotification = LDNNotification::create([
+        return LDNNotification::create([
             'submission_id'             => $submissionId,
             'notification_identifier'   => $notification['id'],
             'from_identifier'           => $notification['actor']['id'],
@@ -72,7 +74,21 @@ class LDNNotificationManager
             'payload'                   => json_encode($notification),
             'direction'                 => $direction
         ]);
+    }
 
-        return (bool)$ldnNotification?->id;
+    public function executeActionBasedOnNotification(LDNNotification $notification): void
+    {
+        $notification = json_decode($notification->payload, true);
+        $submission = Repo::submission()->get($notification->submission_id);
+
+        $type = $notification['type'];
+
+        if (in_array('coar-notify:EndorsementAction', $type)) {
+            Repo::publication()->relate(
+                $submission->getCurrentPublication(),
+                Publication::PUBLICATION_RELATION_PUBLISHED,
+                $notification['object']['ietf:cite-as']
+            );
+        }
     }
 }
