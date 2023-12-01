@@ -77,14 +77,13 @@ class LDNNotificationManager
         ]);
     }
 
-    public function executeActionBasedOnNotification(LDNNotification $notification): void
+    public function executeActionBasedOnNotification(LDNNotification $ldnNotification): void
     {
-        $notification = json_decode($notification->payload, true);
-        $submission = Repo::submission()->get($notification->submission_id);
-
+        $notification = json_decode($ldnNotification->payload, true);
         $type = $notification['type'];
 
         if (in_array('coar-notify:EndorsementAction', $type)) {
+            $submission = Repo::submission()->get($ldnNotification->submission_id);
             Repo::publication()->relate(
                 $submission->getCurrentPublication(),
                 Publication::PUBLICATION_RELATION_PUBLISHED,
