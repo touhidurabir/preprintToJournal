@@ -228,20 +228,20 @@ class PreprintToJournalPlugin extends GenericPlugin
                     'inbox' => PreprintToJournalPlugin::getLDNInboxUrl($remoteService->url),
                     'type'  => 'Service',
                 ]);
-        
+
             $notificationSendStatus = $ldnNotificationManager->sendNotification(
                 PreprintToJournalPlugin::getLDNInboxUrl($remoteService->url),
                 $ldnNotificationManager->getNotification(),
                 ['submissionId' => $transferableSubmission->remote_submission_id]
             );
 
-            if ($notificationSendStatus) {
+            // if ($notificationSendStatus) {
                 $ldnNotificationManager->storeNotification(
                     LDNNotificationManager::DIRECTION_OUTBOUND, 
                     $ldnNotificationManager->getNotification(),
                     (int)$submission->getId()
                 );
-            }
+            // }
 
             return false;
         });
