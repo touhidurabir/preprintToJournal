@@ -3,7 +3,10 @@
 namespace APP\plugins\generic\preprintToJournal;
 
 use APP\core\Request;
+use APP\facades\Repo;
 use PKP\plugins\Hook;
+use APP\core\Services;
+use PKP\facades\Locale;
 use PKP\context\Context;
 use APP\core\Application;
 use PKP\core\JSONMessage;
@@ -14,11 +17,15 @@ use APP\template\TemplateManager;
 use PKP\submission\PKPSubmission;
 use PKP\linkAction\request\AjaxModal;
 use PKP\components\forms\FormComponent;
+use APP\plugins\generic\preprintToJournal\classes\models\RemoteService;
 use APP\plugins\generic\preprintToJournal\PreprintToJournalSchemaMigration;
 use APP\plugins\generic\preprintToJournal\controllers\InboxNotificationHandler;
 use APP\plugins\generic\preprintToJournal\controllers\JournalPublishingHandler;
 use APP\plugins\generic\preprintToJournal\controllers\JournalSubmissionHandler;
 use APP\plugins\generic\preprintToJournal\classes\components\JournalSelectionForm;
+use APP\plugins\generic\preprintToJournal\classes\managers\LDNNotificationManager;
+use APP\plugins\generic\preprintToJournal\classes\models\LDNNotification;
+use APP\plugins\generic\preprintToJournal\classes\models\Submission as TransferableSubmission;
 use APP\plugins\generic\preprintToJournal\controllers\tab\service\PreprintToJournalServiceTabHandler;
 use APP\plugins\generic\preprintToJournal\controllers\tab\service\PreprintToJournalServiceGridHandler;
 
@@ -62,6 +69,7 @@ class PreprintToJournalPlugin extends GenericPlugin
 
         if (self::isOJS()) {
             $this->setupJournalSubmissionHandler();
+            $this->NotifyOnJournalPublish();
             return $success;
         }
 
@@ -148,6 +156,95 @@ class PreprintToJournalPlugin extends GenericPlugin
         }
 
         return parent::manage($args, $request);
+    }
+
+    public function NotifyOnJournalPublish(): void
+    {
+        Hook::add('Publication::publish', function (string $hookName, array $args): bool {
+
+            $submission = $args[2]; /** @var \APP\submission\Submission $submission */
+            $transferableSubmission = TransferableSubmission::where('submission_id', $submission->getId())->first();
+
+            if (!$transferableSubmission) {
+                return false;
+            }
+
+            $request = Application::get()->getRequest();
+
+            $remoteService = RemoteService::find($transferableSubmission->service_id);
+
+            $contextService = Services::get('context'); /** @var \APP\services\ContextService $contextService */
+            $context = $contextService->get((int)$remoteService->context_id); /** @var \PKP\context\Context|\App\server\Server $context */
+
+            $publication = $submission->getCurrentPublication();
+            $doi = Repo::doi()->get($publication->getData('doiId'));
+
+            $lastNotification = LDNNotification::where('submission_id', $submission->getId())
+                ->orderBy('id', 'desc')
+                ->where('direction', LDNNotificationManager::DIRECTION_INBOUND)
+                ->first();
+
+            $ldnNotificationManager = new LDNNotificationManager;
+
+            $ldnNotificationManager
+                ->addNotificationProperty('id', "urn:uuid:" . Str::uuid())
+                ->addNotificationProperty('inReplyTo', $lastNotification->notification_identifier)
+                ->addNotificationProperty('@context', [
+                    'https://www.w3.org/ns/activitystreams',
+                    'https://purl.org/coar/notify',
+                ])
+                ->addNotificationProperty('type', [
+                    'Announce',
+                    'coar-notify:EndorsementAction',
+                ])
+                ->addNotificationProperty('actor', [
+                    'id'    => PreprintToJournalPlugin::getContextBaseUrl(),
+                    'name'  => $context->getData('name', Locale::getPrimaryLocale()),
+                    'type'  => 'Service',
+                ])
+                ->addNotificationProperty('object', [
+                    'id'    => $request->getDispatcher()->url(
+                        $request,
+                        Application::ROUTE_PAGE,
+                        $context->getData('urlPath'),
+                        'article',
+                        'view',
+                        ['id' => $submission->getId()]
+                    ),
+                    'ietf:cite-as' => 'https://doi.org/' . ($doi?->getData('doi') ?? ''),
+                    'type'  => 'sorg:Article',
+                ])
+                ->addNotificationProperty(
+                    'context', 
+                    json_decode($lastNotification->payload, true)['object']
+                )
+                ->addNotificationProperty('origin', [
+                    'id'    => PreprintToJournalPlugin::getContextBaseUrl(),
+                    'inbox' => PreprintToJournalPlugin::getLDNInboxUrl(),
+                    'type'  => 'Service',
+                ])
+                ->addNotificationProperty('target', [
+                    'id'    => $remoteService->url,
+                    'inbox' => PreprintToJournalPlugin::getLDNInboxUrl($remoteService->url),
+                    'type'  => 'Service',
+                ]);
+        
+            $notificationSendStatus = $ldnNotificationManager->sendNotification(
+                PreprintToJournalPlugin::getLDNInboxUrl($remoteService->url),
+                $ldnNotificationManager->getNotification(),
+                ['submissionId' => $transferableSubmission->remote_submission_id]
+            );
+
+            if ($notificationSendStatus) {
+                $ldnNotificationManager->storeNotification(
+                    LDNNotificationManager::DIRECTION_OUTBOUND, 
+                    $ldnNotificationManager->getNotification(),
+                    (int)$submission->getId()
+                );
+            }
+
+            return false;
+        });
     }
 
     public function setupLDNNotificationInbox(): void

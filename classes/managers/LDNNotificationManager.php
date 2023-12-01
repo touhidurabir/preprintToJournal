@@ -71,6 +71,7 @@ class LDNNotificationManager
             'notification_identifier'   => $notification['id'],
             'from_identifier'           => $notification['actor']['id'],
             'told_to'                   => $notification['target']['id'],
+            'in_reply_told'             => $notification['inReplyTo'] ?? null,
             'payload'                   => json_encode($notification),
             'direction'                 => $direction
         ]);
